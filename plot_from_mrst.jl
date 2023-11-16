@@ -43,9 +43,9 @@ cells_nodes_map, cells_materialId_map, cells_isFaultCell_map, coords_map, cells_
 # Select a subset of cells based on materialId or isFaultCell?
 material_ids = [1]
 cell_subset = false
+n_faces_per_cell = countmap(f2cn)
+unique_nc        = sort(unique(values(n_faces_per_cell)))
 if cell_subset
-    n_faces_per_cell = countmap(f2cn)
-    unique_nc        = sort(unique(values(n_faces_per_cell)))
     cells_nodes_map_new  = Matrix{Int64}[]
 else
     cells_nodes_map_new = cells_nodes_map
@@ -85,7 +85,7 @@ for n in eachindex(cells_nodes_map_new)
         pl = poly!(lscene, coords_plot, cells_nodes_map_new[n], color=cells_values_nodes[n], colormap=cmap, colorrange=(minv, maxv), strokecolor=:black, strokewidth=1, shading=false)
         if plotcbar == true
             Colorbar(fig[1, 2], pl, label="values", height=Relative(0.5))
-            plotcbar = false
+            global plotcbar = false
         end
     end
 end

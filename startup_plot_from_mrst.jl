@@ -1,6 +1,7 @@
 # General
 using Revise
 using DelimitedFiles
+using StatsBase
 using Base.Iterators
 
 # Plots
