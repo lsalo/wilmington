@@ -13,6 +13,7 @@
 in_dir           = "/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
 figs_dir         = "/Users/lluis/Documents/julia/graphics/figs/wilmington/"
 files_dir        = "/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
+sim_data_dir     = "/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
 write_connectivity = false
 centroids       = readdlm(join([in_dir, "centroids.dat"]), '\t', Float64, '\n')
 nodes_coords    = readdlm(join([in_dir, "coords.dat"]), '\t', Float64, '\n')
@@ -23,12 +24,15 @@ f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 materialId      = readdlm(join([in_dir, "materialId.dat"]), '\t', Int, '\n')[:,1]
 isFaultCell     = readdlm(join([in_dir, "isFaultCell.dat"]), '\t', Int, '\n')[:,1]
 f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
+state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
-#minx, miny = minimum(centroids[:,1]), minimum(centroids[:,2])
-#cells_values = mean([centroids[:,1].-minx centroids[:,2].-miny], dims=2)
-# cells_values = 1:112573
-cells_values = centroids[:,3]
+#cells_values = centroids[:,3]
+#cells_values = state0["s"][:,2]
+#cells_values = state0["pressure"]/1e6
+#cells_values = state0["rsRatio"]
+cells_values = state0["poro"]
+#cells_values = state0["perm"][:,1]/9.869233e-16 #mD
 
 # 2. Reshape faces_nodes
 faces_nodes = get_faces_nodes(n2fn, faces_nodes)
@@ -66,8 +70,9 @@ end
 
 minv, maxv = minimum(flatten(cells_values_nodes)), maximum(flatten(cells_values_nodes))
 #minv, maxv = 1, 67733
-#cmap = reverse(cgrad(:turbid))
-cmap = cgrad(:gist_stern)
+#cmap = reverse(cgrad(:winter))
+cmap = cgrad(:winter)
+#cmap = cgrad(:gist_stern)
 size_in_inches = (8, 6)
 dpi = 300
 size_in_pixels = size_in_inches .* dpi

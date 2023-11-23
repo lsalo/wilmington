@@ -3,6 +3,7 @@ using Revise
 using DelimitedFiles
 using StatsBase
 using Base.Iterators
+using MAT
 
 # Plots
 using GLMakie
