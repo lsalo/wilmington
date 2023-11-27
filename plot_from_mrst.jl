@@ -71,11 +71,10 @@ end
 # NOTE: In the plot loop, the order with which each cell face is plotted will lead to some differences for interior (shared) faces. Here we are not plotting based on global cell index since we have data organized based on number of faces of each cell, so it will not be exactly equal to MRST view.
 
 minv, maxv = minimum(flatten(cells_values_nodes)), maximum(flatten(cells_values_nodes))
-#minv, maxv = 1, 67733
 #cmap = reverse(cgrad(:winter))
 cmap = cgrad(:winter)
 #cmap = cgrad(:gist_stern)
-fig = Figure(size=(1200, 900))
+fig = Figure(size=(900, 900))
 #ax1 = Axis3(fig[1, 1], aspect=(1,1,1/5), perspectiveness=0.5)
 #ax1.zreversed = true
 lscene = LScene(fig[1, 1], show_axis=false)
@@ -94,6 +93,8 @@ for n in eachindex(cells_nodes_map_new)
     end
 end
 colgap!(fig.layout, 5)
+cam3d!(lscene)
+rotate_cam!(lscene.scene, -0.1, -1.57, 0)
 fig
 
 savefig = false
