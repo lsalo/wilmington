@@ -4,9 +4,11 @@
 #
 # We define vertices and connectivity separately for each element, so that we can plot all vertices of each element with the corresponding cell value (plotting function poly below)
 #
+# To add packages, check status of project, etc:
+# In Julia REPL: activate . (to activate environment in project folder)
 
-# 0. Load modules                           
-# include("startup_plot_from_mrst.jl") # Run in julia REPL (once at the beginning of session).
+# 0. Load modules 
+# In Julia REPL: include("startup_plot_from_mrst.jl") # Run in julia REPL (once at the beginning of session).
 
 # 1. Load data from MRST grid
 # dir             = "/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-tests/simpleTetrahedralGrid/output/"
@@ -28,10 +30,10 @@ state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
 #cells_values = centroids[:,3]
-#cells_values = state0["s"][:,2]
+cells_values = state0["s"][:,2]
 #cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
-cells_values = state0["poro"]
+#cells_values = state0["poro"]
 #cells_values = state0["perm"][:,1]/9.869233e-16 #mD
 
 # 2. Reshape faces_nodes
@@ -73,10 +75,7 @@ minv, maxv = minimum(flatten(cells_values_nodes)), maximum(flatten(cells_values_
 #cmap = reverse(cgrad(:winter))
 cmap = cgrad(:winter)
 #cmap = cgrad(:gist_stern)
-size_in_inches = (8, 6)
-dpi = 300
-size_in_pixels = size_in_inches .* dpi
-fig = Figure(resolution=size_in_pixels)
+fig = Figure(size=(1200, 900))
 #ax1 = Axis3(fig[1, 1], aspect=(1,1,1/5), perspectiveness=0.5)
 #ax1.zreversed = true
 lscene = LScene(fig[1, 1], show_axis=false)
@@ -87,7 +86,7 @@ for n in eachindex(cells_nodes_map_new)
         if coords_plot[1,3] > 0
             coords_plot[:,end] = coords_plot[:,end]*-1
         end
-        pl = poly!(lscene, coords_plot, cells_nodes_map_new[n], color=cells_values_nodes[n], colormap=cmap, colorrange=(minv, maxv), strokecolor=:black, strokewidth=1, shading=false)
+        pl = poly!(lscene, coords_plot, cells_nodes_map_new[n], color=cells_values_nodes[n], colormap=cmap, colorrange=(minv, maxv), strokecolor=:black, strokewidth=1)
         if plotcbar == true
             Colorbar(fig[1, 2], pl, label="values", height=Relative(0.5))
             global plotcbar = false
