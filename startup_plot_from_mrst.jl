@@ -14,3 +14,5 @@ using Colors
 lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
 includet(joinpath(lib_dir, "modules", "polyconnectivity.jl"))
 using .PolyConnectivity
+includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
+using .PlotFromMRST

@@ -30,11 +30,11 @@ state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
 #cells_values = centroids[:,3]
-cells_values = state0["s"][:,2]
+#cells_values = state0["s"][:,2]
 #cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
 #cells_values = state0["poro"]
-#cells_values = state0["perm"][:,1]/9.869233e-16 #mD
+cells_values = state0["perm"][:,1]/9.869233e-16 #mD
 
 # 2. Reshape faces_nodes
 faces_nodes = get_faces_nodes(n2fn, faces_nodes)
@@ -46,62 +46,18 @@ end
 cells_nodes_map, cells_materialId_map, cells_isFaultCell_map, coords_map, cells_values_map = load_cell_connectivity(f2cn, files_dir)
 
 # 4. Figure
-# Select a subset of cells based on materialId or isFaultCell?
+# get values at nodes and select a subset of cells based on materialId or isFaultCell?
 material_ids = [1]
 cell_subset = false
-n_faces_per_cell = countmap(f2cn)
-unique_nc        = sort(unique(values(n_faces_per_cell)))
-if cell_subset
-    cells_nodes_map_new  = Matrix{Int64}[]
-else
-    cells_nodes_map_new = cells_nodes_map
-end
-cells_values_nodes  = Vector{Float64}[]
-
-for f in 1:length(unique_nc)
-    if cell_subset
-        cells_nodes_id = findall(in(material_ids), cells_materialId_map[f])
-        push!(cells_nodes_map_new, cells_nodes_map[f][cells_nodes_id, :])
-    end
-    push!(cells_values_nodes, cells_values[cells_values_map[f]])
-end
-
+cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cell_subset, f2cn, cells_nodes_map, cells_values, cells_values_map)
 
 # Plot
-# NOTE: In the plot loop, the order with which each cell face is plotted will lead to some differences for interior (shared) faces. Here we are not plotting based on global cell index since we have data organized based on number of faces of each cell, so it will not be exactly equal to MRST view.
-
-minv, maxv = minimum(flatten(cells_values_nodes)), maximum(flatten(cells_values_nodes))
 #cmap = reverse(cgrad(:winter))
-cmap = cgrad(:winter)
+#cmap = cgrad(:winter)
 #cmap = cgrad(:gist_stern)
-fig = Figure(size=(900, 900))
-#ax1 = Axis3(fig[1, 1], aspect=(1,1,1/5), perspectiveness=0.5)
-#ax1.zreversed = true
-lscene = LScene(fig[1, 1], show_axis=false)
-plotcbar = true
-for n in eachindex(cells_nodes_map_new)
-    if length(cells_nodes_map_new[n])>0
-        coords_plot = coords_map[n]
-        if coords_plot[1,3] > 0
-            coords_plot[:,end] = coords_plot[:,end]*-1
-        end
-        pl = poly!(lscene, coords_plot, cells_nodes_map_new[n], color=cells_values_nodes[n], colormap=cmap, colorrange=(minv, maxv), strokecolor=:black, strokewidth=1)
-        if plotcbar == true
-            Colorbar(fig[1, 2], pl, label="values", height=Relative(0.5))
-            global plotcbar = false
-        end
-    end
-end
-colgap!(fig.layout, 5)
-cam3d!(lscene)
-rotate_cam!(lscene.scene, -0.1, -1.57, 0)
-fig
+fig_descriptor = (cmap=reverse(cgrad(:turbid)), cbar_label="Permeability [mD]", fig_size = (700, 800), plot_height = 1100, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "permeability")
+plotCellValues(cells_nodes_map_new, coords_map, cells_values_nodes, fig_descriptor)
 
-savefig = false
-if savefig
-    # For interactive plots with GLMakie, you can rotate, zoom, etc and it will save the view on the fig window
-    save(join([output_dir, "test.png"]), fig)
-end
 
 
 
