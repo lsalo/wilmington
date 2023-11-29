@@ -5,7 +5,7 @@
 # We define vertices and connectivity separately for each element, so that we can plot all vertices of each element with the corresponding cell value (plotting function poly below)
 #
 # To add packages, check status of project, etc:
-# In Julia REPL: activate . (to activate environment in project folder)
+# In Julia REPL: activate . or using Pkg; Pkg.activate("path/to/project') (to activate environment in project folder)
 
 # 0. Load modules
 # REMEMBER: Update path in include file below (windows vs mac)
