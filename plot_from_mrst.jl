@@ -7,15 +7,15 @@
 # To add packages, check status of project, etc:
 # In Julia REPL: activate . (to activate environment in project folder)
 
-# 0. Load modules 
+# 0. Load modules
+# REMEMBER: Update path in include file below (windows vs mac)
 # In Julia REPL: include("startup_plot_from_mrst.jl") # Run in julia REPL (once at the beginning of session).
 
 # 1. Load data from MRST grid
-# dir             = "/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-tests/simpleTetrahedralGrid/output/"
-in_dir           = "/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
-figs_dir         = "/Users/lluis/Documents/julia/graphics/figs/wilmington/"
-files_dir        = "/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
-sim_data_dir     = "/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
+in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmington\\grid\\"             #"/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
+figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\initialization\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
+files_dir        = "C:\\Users\\lsalo\\julia\\wilmington\\grid\\poly_cell_connectivity\\"                  #"/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
+sim_data_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\ini_data\\"         #"/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
 write_connectivity = false
 centroids       = readdlm(join([in_dir, "centroids.dat"]), '\t', Float64, '\n')
 nodes_coords    = readdlm(join([in_dir, "coords.dat"]), '\t', Float64, '\n')
@@ -29,12 +29,12 @@ f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
-#cells_values = centroids[:,3]
+cells_values = centroids[:,3]/1e3
 #cells_values = state0["s"][:,2]
 #cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
 #cells_values = state0["poro"]
-cells_values = state0["perm"][:,1]/9.869233e-16 #mD
+#cells_values = state0["perm"][:,1]/9.869233e-16 #mD
 
 # 2. Reshape faces_nodes
 faces_nodes = get_faces_nodes(n2fn, faces_nodes)
@@ -55,7 +55,8 @@ cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cell_su
 #cmap = reverse(cgrad(:winter))
 #cmap = cgrad(:winter)
 #cmap = cgrad(:gist_stern)
-fig_descriptor = (cmap=reverse(cgrad(:turbid)), cbar_label="Permeability [mD]", fig_size = (700, 800), plot_height = 1100, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "permeability")
+#cmap = reverse(cgrad(:turbid))
+fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Depth [km]", fig_size = (700, 800), plot_height = 1500, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "depth", target_dpi=450, target_size_in=(7,8))
 plotCellValues(cells_nodes_map_new, coords_map, cells_values_nodes, fig_descriptor)
 
 
