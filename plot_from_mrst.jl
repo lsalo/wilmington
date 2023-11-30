@@ -29,9 +29,9 @@ f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
-cells_values = centroids[:,3]/1e3
+#cells_values = centroids[:,3]/1e3
 #cells_values = state0["s"][:,2]
-#cells_values = state0["pressure"]/1e6
+cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
 #cells_values = state0["poro"]
 #cells_values = state0["perm"][:,1]/9.869233e-16 #mD
@@ -48,15 +48,20 @@ cells_nodes_map, cells_materialId_map, cells_isFaultCell_map, coords_map, cells_
 # 4. Figure
 # get values at nodes and select a subset of cells based on materialId or isFaultCell?
 material_ids = [1]
-cell_subset = false
-cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cell_subset, f2cn, cells_nodes_map, cells_values, cells_values_map)
+cell_subset = true
+cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cells_materialId_map, cell_subset, f2cn, cells_nodes_map, cells_values, cells_values_map)
 
 # Plot
 #cmap = reverse(cgrad(:winter))
 #cmap = cgrad(:winter)
 #cmap = cgrad(:gist_stern)
 #cmap = reverse(cgrad(:turbid))
-fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Depth [km]", fig_size = (700, 800), plot_height = 1500, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "depth", target_dpi=450, target_size_in=(7,8))
+
+# Full mesh
+fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (700, 800), plot_height = 1500, cgap=50, cbar_height = 500, angles= (-0.1, -1.57, 0), save_fig = false, save_dir = figs_dir, title = "p0_reservoir", target_dpi=450, target_size_in=(7,8))
+
+# Reservoir 
+fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (800, 700), plot_height = 2500, cgap=50, cbar_height = 200, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "p0_reservoir", target_dpi=450, target_size_in=(7,7))
 plotCellValues(cells_nodes_map_new, coords_map, cells_values_nodes, fig_descriptor)
 
 
