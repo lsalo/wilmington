@@ -13,9 +13,12 @@
 
 # 1. Load data from MRST grid
 in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmington\\grid\\"             #"/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
-figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\initialization\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
+#figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\initialization\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
+figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\results\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
 files_dir        = "C:\\Users\\lsalo\\julia\\wilmington\\grid\\poly_cell_connectivity\\"                  #"/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
-sim_data_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\ini_data\\"         #"/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
+sim_data_ini_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\ini_data\\"         #"/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
+sim_data_fin_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\result_data\\"  
+
 write_connectivity = false
 centroids       = readdlm(join([in_dir, "centroids.dat"]), '\t', Float64, '\n')
 nodes_coords    = readdlm(join([in_dir, "coords.dat"]), '\t', Float64, '\n')
@@ -26,7 +29,13 @@ f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 materialId      = readdlm(join([in_dir, "materialId.dat"]), '\t', Int, '\n')[:,1]
 isFaultCell     = readdlm(join([in_dir, "isFaultCell.dat"]), '\t', Int, '\n')[:,1]
 f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
-state0          = matread(join([sim_data_dir, "state0.mat"]))["data"]
+
+# state 0
+state0          = matread(join([sim_data_ini_dir, "state0.mat"]))["data"]
+
+# results (for larger files, we save in .mat binary format, it is much faster to read than text files)
+p               = matread(join([sim_data_fin_dir, "states_p_Pa.mat"]))["p"]
+
 
 #Adjust cell values
 #cells_values = centroids[:,3]/1e3
@@ -58,10 +67,10 @@ cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cells_m
 #cmap = reverse(cgrad(:turbid))
 
 # Full mesh
-fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (700, 800), plot_height = 1500, cgap=50, cbar_height = 500, angles= (-0.1, -1.57, 0), save_fig = false, save_dir = figs_dir, title = "p0_reservoir", target_dpi=450, target_size_in=(7,8))
+#fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (1000, 800), plot_height = 800, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew = 0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "p0", target_dpi=450, target_size_in=(8,6.4))
 
 # Reservoir 
-fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (800, 700), plot_height = 2500, cgap=50, cbar_height = 200, angles= (-0.1, -1.57, 0), save_fig = true, save_dir = figs_dir, title = "p0_reservoir", target_dpi=450, target_size_in=(7,7))
+fig_descriptor = (cmap=cgrad(:gist_stern), cbar_label="Pressure [MPa]", fig_size = (800, 600), plot_height = 800, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew=0.02, xlms=(378546, 400263), ylms=(3.728e6, 3.751e6), save_fig = false, save_dir = figs_dir, title = "p0_reservoir", target_dpi=450, target_size_in=(8,6))
 plotCellValues(cells_nodes_map_new, coords_map, cells_values_nodes, fig_descriptor)
 
 
