@@ -9,6 +9,7 @@ using MAT
 using GLMakie
 GLMakie.activate!()
 using Colors
+using ColorSchemes
 
 # Mine
 #lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
