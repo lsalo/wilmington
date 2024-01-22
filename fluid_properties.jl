@@ -1,7 +1,7 @@
 #
 # Generate fluid properties (PVTO, PVDG, PVTW) for Wilmington field
-# Reservoir simulation using a black oil model in MRST
-# We use ECLIPSE "FIELD" units for fluid propeties
+# reservoir simulation using a black oil model in MRST.
+# We use ECLIPSE "FIELD" units for fluid propeties:
 # Water is a brine with 30,000ppm salinity (French & Burchfield, 1990)
 # Gas is a mixture of 95% methane and 5% CO2 (Sankur et al., 1986)
 # Oil averages 16 deg. API (Nelson, 1976)
@@ -79,6 +79,8 @@ end
 
 
 # 3. PVDG (dry gas)
+pressure_bar = [1, 10, 20, 30, 50, 75, 100, 130, 160, 200, 250, 300, 350, 400, 450, 500]
+gas_density, gas_FVF = gasDensityBW1992(density_gas_kgm3, temp_r_C, pressure_bar, units)
 
 # 4. PVTO (live oil)
 
