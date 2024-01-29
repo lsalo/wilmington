@@ -101,5 +101,5 @@ PVTO = hcat(oil_Rs, p, oil_FVF, oil_visc_cP)
 if save_data
     DelimitedFiles.writedlm(join([in_dir, "PVTW.dat"]), PVTW, '\t') 
     DelimitedFiles.writedlm(join([in_dir, "PVDG.dat"]), PVDG, '\t') 
-    DelimitedFiles.writedlm(join([in_dir, "PVDG.dat"]), PVTO, '\t') 
+    DelimitedFiles.writedlm(join([in_dir, "PVTO.dat"]), PVTO, '\t') 
 end
