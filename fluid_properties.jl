@@ -21,7 +21,7 @@ save_data = false
 
 # Paths and variables
 in_dir = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmington\\input\\"
-PVTO = readdlm(join([in_dir, "brine_PVTO_T323.15_P1P500_Sbrine30000ppm.txt"]))
+b_PVTO = readdlm(join([in_dir, "brine_PVTO_T323.15_P1P500_Sbrine30000ppm.txt"]))
 units = "FIELD"                                             # "FIELD" or "METRIC"
 
 kgm3_to_lbft3   = 0.062428
@@ -51,12 +51,12 @@ end
 p_out_bar = [1, 100, 200, 300, 400, 500]
 PVTW = Matrix{Float64}(undef, length(p_out_bar), 5)
 PVTW[:,1] = p_out_bar
-pv = Float64.(PVTO[2:end, 1])
+pv = Float64.(b_PVTO[2:end, 1])
 for (id, p_val) in enumerate(p_out_bar)
     # interpolate for B, mu
-    fb = linear_interpolation(pv, Float64.(PVTO[2:end, 2]))
+    fb = linear_interpolation(pv, Float64.(b_PVTO[2:end, 2]))
     PVTW[id, 2] = fb(p_val)                                              # B [rm3/Sm3]
-    fm = linear_interpolation(pv, Float64.(PVTO[2:end, 3]))
+    fm = linear_interpolation(pv, Float64.(b_PVTO[2:end, 3]))
     PVTW[id, 4] = fm(p_val)                                              # mu [cP]
     
     # Calculate C (compressibility) and Cv (viscosibility)
@@ -66,11 +66,11 @@ for (id, p_val) in enumerate(p_out_bar)
     else
         index = [index-1, index+1]
     end 
-    bw_calc     = PVTO[1 .+ index, 2]
+    bw_calc     = b_PVTO[1 .+ index, 2]
     p_calc      = pv[index]
     bw_avg      = mean(bw_calc)
     PVTW[id, 3] = (abs.(diff(bw_calc)/diff(p_calc)).*bw_avg)[1]         # C [1/bar]
-    mu_calc     = PVTO[1 .+ index, 3]
+    mu_calc     = b_PVTO[1 .+ index, 3]
     mu_avg      = mean(mu_calc)
     PVTW[id, 5] = (abs.(diff(mu_calc)/diff(p_calc)).*mu_avg)[1]         # Cv [1/bar]
 end
