@@ -11,6 +11,11 @@
 using DelimitedFiles
 using Interpolations
 using Statistics
+using Revise
+
+lib_dir = "C:\\Users\\lsalo\\julia\\jl-tools\\"
+includet(joinpath(lib_dir, "modules", "reservoirfluidspvt.jl"))
+using .ReservoirFluidsPVT
 
 save_data = false
 
@@ -22,7 +27,7 @@ units = "FIELD"                                             # "FIELD" or "METRIC
 kgm3_to_lbft3   = 0.062428
 temp_std_C      = 15.56
 p_std_bar       = 1.01325
-api             = 18;
+api             = 18
 temp_r_C        = 50
 sal_ppm         = 30000
 bar_to_psi      = 14.503773773
@@ -80,13 +85,21 @@ end
 
 # 3. PVDG (dry gas)
 pressure_bar = [1, 10, 20, 30, 50, 75, 100, 130, 160, 200, 250, 300, 350, 400, 450, 500]
-gas_density, gas_FVF = gasDensityBW1992(density_gas_kgm3, temp_r_C, pressure_bar, units)
+gas_density, gas_FVF, gas_viscosity_cP = gasPVTBW1992(density_gas_kgm3, temp_r_C, pressure_bar, units)
+PVDG = Matrix{Float64}(undef, length(pressure_bar), 3)
+PVDG = hcat(pressure_bar, gas_FVF, gas_viscosity_cP)
+if units == "FIELD"
+    PVDG[:,1] = PVDG[:,1]*bar_to_psi
+end
 
 # 4. PVTO (live oil)
+oil_dens_kgm3, oil_Rs, p, oil_FVF, oil_visc_cP = oilPVTBW1992(density_gas_kgm3, api, temp_r_C, pressure_bar, units)
+PVTO = Matrix{Float64}(undef, length(p), 4)
+PVTO = hcat(oil_Rs, p, oil_FVF, oil_visc_cP)
 
 # Save output to text file
 if save_data
     DelimitedFiles.writedlm(join([in_dir, "PVTW.dat"]), PVTW, '\t') 
-    # PVDG
-    # PVTO
+    DelimitedFiles.writedlm(join([in_dir, "PVDG.dat"]), PVDG, '\t') 
+    DelimitedFiles.writedlm(join([in_dir, "PVDG.dat"]), PVTO, '\t') 
 end
