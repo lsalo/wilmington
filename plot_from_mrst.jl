@@ -5,7 +5,7 @@
 # We define vertices and connectivity separately for each element, so that we can plot all vertices of each element with the corresponding cell value (plotting function poly below)
 #
 # To add packages, check status of project, etc:
-# In Julia REPL: activate . or using Pkg; Pkg.activate("path/to/project') (to activate environment in project folder)
+# In Julia REPL: ] activate . or using Pkg; Pkg.activate("path/to/project') (to activate environment in project folder)
 
 # 0. Load modules
 # REMEMBER: Update path in include file below (windows vs mac)
@@ -17,7 +17,7 @@ in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmin
 figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\revised_20y\\initialization\\"  
 #figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\results\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
 files_dir        = "C:\\Users\\lsalo\\julia\\wilmington\\grid\\poly_cell_connectivity\\"                  #"/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
-sim_data_ini_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\revised_20y\\ini_data\\"
+sim_data_ini_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\mixedRate_LSprops_test_goc1100\\ini_data\\"
 # "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\ini_data\\"         #"/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
 sim_data_fin_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\result_data\\"  
 
@@ -46,12 +46,17 @@ state0          = matread(join([sim_data_ini_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
 #cells_values = centroids[:,3]/1e3
-#cells_values = state0["s"][:,2]
+cells_values = state0["s"][:,3]
 #cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
-cells_values = state0["rs"]
+#cells_values = state0["rs"]
 #cells_values = state0["poro"]
 #cells_values = state0["perm"][:,1]/9.869233e-16 #mD
+
+#sw = state0["s"][:,1]
+#cells_values = ones(Int, size(sw, 1))
+#cells_values[state0["s"][:,2] .> 1e-4] .= 2
+#cells_values[state0["s"][:,3] .> 1e-4] .= 3
 
 #cells_values = dp_fin_MPa
 #cells_values = ones(Int, size(sw, 1))
@@ -77,10 +82,10 @@ cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cells_m
 
 # Plot
 #mycmap = reverse(cgrad(:winter))
-mycmap = cgrad(:winter)
+#mycmap = cgrad(:winter)
 #mycmap = cgrad(:gist_stern)
 #mycmap = reverse(cgrad(:turbid))
-#mycmap = ColorScheme([colorant"blue", colorant"green", colorant"red"])
+mycmap = ColorScheme([colorant"blue", colorant"green", colorant"red"])
 #mycmap=cgrad(:nipy_spectral)
 
 # Full mesh
