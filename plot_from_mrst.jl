@@ -17,7 +17,7 @@ in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmin
 figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\revised_20y\\initialization\\"  
 #figs_dir         = "C:\\Users\\lsalo\\julia\\graphics\\figs\\wilmington\\JSsetup\\results\\"       #"/Users/lluis/Documents/julia/graphics/figs/wilmington/"
 files_dir        = "C:\\Users\\lsalo\\julia\\wilmington\\grid\\poly_cell_connectivity\\"                  #"/Users/lluis/Documents/julia/wilmington/grid/poly_cell_connectivity/"
-sim_data_ini_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\mixedRate_LSprops_test_goc1100\\ini_data\\"
+sim_data_ini_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\liquidRate_JS_LSprops_owc1800_test\\ini_data\\"
 # "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\ini_data\\"         #"/Users/lluis/Dropbox (MIT)/home_copy/matlab/sim_data/wilmington/test/"
 sim_data_fin_dir     = "C:\\Users\\lsalo\\matlab\\sim_data\\mrst\\wilmington\\runJSsetup\\result_data\\"  
 
@@ -30,7 +30,6 @@ cells_faces     = readdlm(join([in_dir, "faces.dat"]), '\t', Int, '\n')[:,1]
 f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 materialId      = readdlm(join([in_dir, "materialId.dat"]), '\t', Int, '\n')[:,1]
 isFaultCell     = readdlm(join([in_dir, "isFaultCell.dat"]), '\t', Int, '\n')[:,1]
-f2cn            = readdlm(join([in_dir, "f2cn.dat"]), '\t', Int, '\n')[:,1]
 
 # state 0
 state0          = matread(join([sim_data_ini_dir, "state0.mat"]))["data"]
@@ -46,8 +45,8 @@ state0          = matread(join([sim_data_ini_dir, "state0.mat"]))["data"]
 
 #Adjust cell values
 #cells_values = centroids[:,3]/1e3
-cells_values = state0["s"][:,3]
-#cells_values = state0["pressure"]/1e6
+#cells_values = state0["s"][:,3]
+cells_values = state0["pressure"]/1e6
 #cells_values = state0["rsRatio"]
 #cells_values = state0["rs"]
 #cells_values = state0["poro"]
@@ -85,8 +84,8 @@ cells_nodes_map_new, cells_values_nodes = getValuesAtNodes(material_ids, cells_m
 #mycmap = cgrad(:winter)
 #mycmap = cgrad(:gist_stern)
 #mycmap = reverse(cgrad(:turbid))
-mycmap = ColorScheme([colorant"blue", colorant"green", colorant"red"])
-#mycmap=cgrad(:nipy_spectral)
+#mycmap = ColorScheme([colorant"blue", colorant"green", colorant"red"])
+mycmap=cgrad(:nipy_spectral)
 
 # Full mesh
 #fig_descriptor = (cmap=mycmap, cbar_label="So [-]", fig_size = (1000, 800), plot_height = 800, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew = 0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "s0", target_dpi=450, target_size_in=(8,6.4))
