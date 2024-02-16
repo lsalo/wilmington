@@ -16,5 +16,7 @@ using ColorSchemes
 lib_dir = "C:\\Users\\lsalo\\julia\\jl-tools\\"
 includet(joinpath(lib_dir, "modules", "polyconnectivity.jl"))
 using .PolyConnectivity
+includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
+using .GridOperations
 includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
 using .PlotFromMRST
