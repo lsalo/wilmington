@@ -22,7 +22,7 @@ fn_p    = "pressures.mat"
 f2cn        = readdlm(join([dir_G, "f2cn.dat"]), '\t', Int, '\n')[:,1]  # from MRST, see Grid structure in textbook
 n2fn        = readdlm(join([dir_G, "n2fn.dat"]), '\t', Int, '\n')[:,1] # "
 G           = matread(join([dir_G, fn_G]))["G"]
-nodes_inp, elements_inp, elset_names_inp = get_nodes_from_inp(dir_inp, fn_inp, "tetrahedral")
+nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 
 # Node-cell connections map
 nodes_to_cells = map_nodes_to_cells(G, n2fn, f2cn)
