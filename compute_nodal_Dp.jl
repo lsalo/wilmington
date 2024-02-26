@@ -14,33 +14,55 @@ using .GridOperations
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
-fn_G    = "wilmington_G.mat"
-dir_p   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/results/"
-fn_p    = "pressures.mat"
+fn_G    = "wilmington_ranger_G_withGeometry.mat"
+dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus/"
+fn_p    = "states_p_Pa.mat"
+fn_t    = "states_t_s.mat"
 
-# Import
-f2cn        = readdlm(join([dir_G, "f2cn.dat"]), '\t', Int, '\n')[:,1]  # from MRST, see Grid structure in textbook
-n2fn        = readdlm(join([dir_G, "n2fn.dat"]), '\t', Int, '\n')[:,1] # "
-G           = matread(join([dir_G, fn_G]))["G"]
+# Connectivity from .inp file (Abaqus grid)
 nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 
 # Node-cell connections map
+G           = matread(join([dir_G, fn_G]))["G"]
+f2cn        = Int.(G["cells"]["f2n"])
+n2fn        = Int.(G["faces"]["n2fn"])
 nodes_to_cells = map_nodes_to_cells(G, n2fn, f2cn)
 
 # Get nodal pressures and compute Dp
 # This needs to be done at each timestep, and then compute Dp
-p_test  = rand(1:10^6, maximum(f2cn), 1) 
-nodal_p = Dict((node_id, mean(p_test[cell_ids])) for (node_id, cell_ids) in nodes_to_cells)
-# TBD: Compute Dp
+t = 1936 .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
+p = matread(join([dir_p fn_p]))["p"]
+dp = p[:, 2:end] - p[:, 1:end-1] # dp from previous tstep (not from hydrostatic pressure)
+nodal_dp = Vector{}(undef, size(dp, 2))
+for i in 1:length(nodal_dp)
+    nodal_dp[i] = Dict((node_id, mean(dp[cell_ids, i])) for (node_id, cell_ids) in nodes_to_cells)
+end
 
-# Map MRST nodes to global (.inp) nodes using nodal coordinates
-nodes_MRST = Matrix{Union{Int, Float64}}(undef, size(nodes_inp, 1), 4)
-nodes_MRST[:,1] = 1:size(nodes_inp, 1)
-nodes_MRST[:,2:4] = G["nodes"]["coords"] # Attention: Here in the G structure we have ALL nodes, not just those of the cells used in reservoir simulation
-nodes_MRST[:,4] = -1*nodes_MRST[:,4]  #
-#for node in 1:size(nodes_MRST, 1)
-#    coords = nodes_MRST[node,2:4]
-#    findall(coords' .== nodes_inp[:,2:4]) # MRST coordinates don't overlap...TBD
-#end
+# Update MRST nodes to global (.inp) nodes using map
+# Note: Given that we are using the "not rotated" grid in MRST, and the rotated grid for Abaqus, this works because the global node ids (in .inp file) of both the rotated and not rotated grids remain the same. Otherwise, we would have to use the rotated grid in MRST as well. We decided not to use the rotated grid in MRST because the well coordinates (to assign well cell ids) are reported in the "not rotated" frame, although you could move from one to the other by matching cell volumes + depth. See create_mrst_inputs.jl.
+map_inp_to_mrst_node = readdlm(join([dir_G, "map_inp_to_mrst_node.dat"]), '\t', Int64, '\n')
+nodal_dp_inp = Matrix{Union{Int64, Float64}}(undef, Int(G["nodes"]["num"]), size(dp, 2)+1)
+nodal_dp_inp[:,1] = map_inp_to_mrst_node[:,1]
+for i in 1:length(nodal_dp)
+    nodal_dp_inp[:, i+1] = [nodal_dp[i][row[2]] for row in eachrow(map_inp_to_mrst_node)]
+end
+nodal_dp_inp = sortslices(nodal_dp_inp, dims=1)  # sort based on node id
 
-# Assign nodal Dp to global node ids (focus on reservoir cells only)
+# For each tstep, export nodal values which are != 0
+fn = "nodal_dp_"
+for i in 1:length(nodal_dp)
+    data = hcat(nodal_dp_inp[:,1], nodal_dp_inp[:,i+1])
+    open(join([dir_p_abq, fn, string(round(t[i+1], digits=2)), ".dat"]), "w") do f
+        for row in eachrow(data)
+            if abs(row[2]) > 10    # we consider only values > 10 Pa
+                writedlm(f, row', '\t')
+            end
+        end
+    end
+end
+
+# Plot nodal dp using poly
+# get dp with respect to initial 
+nodal_dp_inp_ini = Matrix{Float64}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2]-1)
+nodal_dp_inp_ini = cumsum(nodal_dp_inp[:,2:end], dims=2)

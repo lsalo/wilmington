@@ -32,7 +32,7 @@ faces_nodes, nset_mrst_face_ids = find_fault_faces_mrst_grid(G, nset_mrst_ids, n
 # Computation of transmissibility multipliers
 # TBD if needed. For now, we just want 1s and 0s (for impermeable fault faces) and assign directly in MRST.
 
-# Find cell ids of well coordinates
+# Find cell ids of well coordinates and save to directory
 fn_G = "wilmington_ranger_G_withGeometry.mat"
 G = matread(join([dir_grid, fn_G]))["G"]
 centroids = G["cells"]["centroids"]
@@ -44,7 +44,5 @@ cell_id_inj = find_ids_from_pairwise_distance(coord_inj, centroids, [dir_grid, "
 coord_prod = readdlm(join([dir_data, "/Production/coordOilProduction_UTM_SpatialUpscaled_XY_FinalWithZdepth.dat"]), '\t', Float64, '\n')
 coord_prod[:,3] = abs.(coord_prod[:,3]) 
 cell_id_prod = find_ids_from_pairwise_distance(coord_prod, centroids, [dir_grid, "cell_id_prod"])
-
-# Save cell_ids in data file
 
 
