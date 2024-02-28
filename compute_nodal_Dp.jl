@@ -6,9 +6,17 @@ using DelimitedFiles
 using Revise
 using StatsBase
 
+using GLMakie
+GLMakie.activate!()
+using Colors
+using ColorSchemes
+using LaTeXStrings
+
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
 includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
 using .GridOperations
+includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
+using .PlotFromMRST
 
 # Directories
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -19,6 +27,7 @@ dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRs
 dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus/"
 fn_p    = "states_p_Pa.mat"
 fn_t    = "states_t_s.mat"
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
 
 # Connectivity from .inp file (Abaqus grid)
 nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
@@ -27,7 +36,7 @@ nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral"
 G           = matread(join([dir_G, fn_G]))["G"]
 f2cn        = Int.(G["cells"]["f2n"])
 n2fn        = Int.(G["faces"]["n2fn"])
-nodes_to_cells = map_nodes_to_cells(G, n2fn, f2cn)
+nodes_to_cells, faces_nodes = map_nodes_to_cells(G, n2fn, f2cn)
 
 # Get nodal pressures and compute Dp
 # This needs to be done at each timestep, and then compute Dp
@@ -47,16 +56,16 @@ nodal_dp_inp[:,1] = map_inp_to_mrst_node[:,1]
 for i in 1:length(nodal_dp)
     nodal_dp_inp[:, i+1] = [nodal_dp[i][row[2]] for row in eachrow(map_inp_to_mrst_node)]
 end
-nodal_dp_inp = sortslices(nodal_dp_inp, dims=1)  # sort based on node id
+nodal_dp_inp_sorted = sortslices(nodal_dp_inp, dims=1)  # sort based on node id
 
 # For each tstep, export nodal values which are != 0
 fn = "nodal_dp_"
 for i in 1:length(nodal_dp)
-    data = hcat(nodal_dp_inp[:,1], nodal_dp_inp[:,i+1])
+    data = hcat(nodal_dp_inp_sorted[:,1], nodal_dp_inp_sorted[:,i+1])
     open(join([dir_p_abq, fn, string(round(t[i+1], digits=2)), ".dat"]), "w") do f
         for row in eachrow(data)
             if abs(row[2]) > 10    # we consider only values > 10 Pa
-                writedlm(f, row', '\t')
+                writedlm(f, row', delim="\t")
             end
         end
     end
@@ -64,5 +73,22 @@ end
 
 # Plot nodal dp using poly
 # get dp with respect to initial 
-nodal_dp_inp_ini = Matrix{Float64}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2]-1)
-nodal_dp_inp_ini = cumsum(nodal_dp_inp[:,2:end], dims=2)
+nodal_dp_inp_ini = Matrix{Union{Int64, Float64}}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2])
+nodal_dp_inp_ini[:,1] = map_inp_to_mrst_node[:,2]
+nodal_dp_inp_ini[:,2:end] = cumsum(nodal_dp_inp[:,2:end], dims=2)
+nodal_dp_inp_ini = sortslices(nodal_dp_inp_ini, dims=1)  
+
+# put variables in vector containers
+coords_map = Vector{}(undef, 1)
+cells_nodes_map_plot = Vector{}(undef, 1)
+cells_values_nodes = Vector{}(undef, 1)
+coords_map[1] = G["nodes"]["coords"]
+cells_nodes_map_plot[1] = faces_nodes
+cells_values_nodes[1] = nodal_dp_inp_ini[:,end]./1e5
+
+# plot
+mycmap=cgrad(:curl)
+
+fig_descriptor = (cmap=mycmap, cbar_label=L"$\Delta p$ [bar]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.57*pi, plot_elev = 0.47*pi, plot_linew=0.1, xlms=(378449, 400339), ylms=(3.728e6, 3.752e6), save_fig = true, save_dir = figs_dir, title = "dp_reservoir_1961", target_dpi=350, target_size_in=(8,6))
+
+plotCellValues(cells_nodes_map_plot, coords_map, cells_values_nodes, fig_descriptor)
