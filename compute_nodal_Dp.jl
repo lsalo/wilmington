@@ -42,7 +42,8 @@ nodes_to_cells, faces_nodes = map_nodes_to_cells(G, n2fn, f2cn)
 # This needs to be done at each timestep, and then compute Dp
 t = 1936 .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
 p = matread(join([dir_p fn_p]))["p"]
-dp = p[:, 2:end] - p[:, 1:end-1] # dp from previous tstep (not from hydrostatic pressure)
+#dp = p[:, 2:end] - p[:, 1:end-1] # dp from previous tstep (not from hydrostatic pressure)
+dp = p[:, 2:end] .- p[:, 1]        # dp from hydrostatic pressure
 nodal_dp = Vector{}(undef, size(dp, 2))
 for i in 1:length(nodal_dp)
     nodal_dp[i] = Dict((node_id, mean(dp[cell_ids, i])) for (node_id, cell_ids) in nodes_to_cells)
@@ -65,7 +66,9 @@ for i in 1:length(nodal_dp)
     open(join([dir_p_abq, fn, string(round(t[i+1], digits=2)), ".dat"]), "w") do f
         for row in eachrow(data)
             if abs(row[2]) > 10    # we consider only values > 10 Pa
-                writedlm(f, row', delim="\t")
+                #writedlm(f, row', delim=",")
+                str=string(row[1])*","*string(row[2])*"\n"
+                write(f, str)
             end
         end
     end
@@ -75,7 +78,7 @@ end
 # get dp with respect to initial 
 nodal_dp_inp_ini = Matrix{Union{Int64, Float64}}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2])
 nodal_dp_inp_ini[:,1] = map_inp_to_mrst_node[:,2]
-nodal_dp_inp_ini[:,2:end] = cumsum(nodal_dp_inp[:,2:end], dims=2)
+nodal_dp_inp_ini[:,2:end] = nodal_dp_inp[:,2:end]
 nodal_dp_inp_ini = sortslices(nodal_dp_inp_ini, dims=1)  
 
 # put variables in vector containers
