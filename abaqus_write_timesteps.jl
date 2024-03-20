@@ -15,8 +15,8 @@ fileNames=readdir(dir_p_abq)
 fileNameToSave=dir_out*"tsteps_1936_to_1961.inp"
 open(fileNameToSave, "w") do f
     str = ""
-    t_inc_ini_s = 3600
-    tstep_size_s = 2629746 # from mrst: year/12
+    t_inc_ini_s = 3600*24*2 # 2 days
+    tstep_size_s = 2629746  # from mrst: year/12
     t_inc_max_s = tstep_size_s
     for (i, fileName) in enumerate(fileNames)
         stepNumber=i
