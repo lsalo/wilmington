@@ -7,9 +7,9 @@ import numpy as np
 import multiprocessing
 
 
-def export_field_at_node_location_one_timestep(odb, stepName, increment, nodesetUser, nodesetName, COORD, fieldNameToOutput, dirToSave):
-    print("--Reading time step "+ stepName)
-    print("--Field to output ", fieldNameToOutput)
+def export_field_at_node_location_one_timestep(odb, stepName, increment, nodesetUser, nset, COORD, fieldNameToOutput, dirToSave):
+    #print("--Reading time step "+ stepName)
+    #print("--Field to output ", fieldNameToOutput)
     tmp = odb.steps[stepName].frames[increment].fieldOutputs[fieldNameToOutput]
 
     if fieldNameToOutput == "S":
@@ -53,17 +53,17 @@ def export_field_at_node_location_one_timestep(odb, stepName, increment, nodeset
         if fieldNameToOutput == "U":
 	        f.write('%d, %0.3f, %0.3f, %0.3f\n' % (field_out[i, 0], field_out[i, 1], field_out[i, 2], field_out[i, 3]))
         elif fieldNameToOutput == "S":
-            f.write('%d, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f\n' % (field_out[i, :]))
+            f.write('%d, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f\n' % (field_out[i, 0], field_out[i, 1], field_out[i, 2], field_out[i, 3], field_out[i, 4], field_out[i, 5], field_out[i, 6]))
     f.close()
 
-def main_fun(odb, fieldNameToOutput, nodesetName, stepNameUser, dir_odb):
-    print("--Working on nodeset "+nodesetName)
+def main_fun(odb, fieldNameToOutput, nset, stepNameUser, dir_odb):
+    print("--Working on nodeset " + nset)
     
     increment=-1 # last increment of each time step
-    dirToSave= dir_odb + "extracted/nodeset_" + nodesetName + "/" + fieldNameToOutput + "/"    
+    dirToSave= dir_odb + "extracted/" + fieldNameToOutput + "/nodeset_" + nset + "/"
     if not os.path.exists(dirToSave):
         os.makedirs(dirToSave)
-    nodesetUser = odb.rootAssembly.instances['PART-1-1'].nodeSets[nodesetName.replace(" ","")]
+    nodesetUser = odb.rootAssembly.instances['PART-1-1'].nodeSets[nset.replace(" ","")]
     
     # Opening the file to save the fault tractions
     if stepNameUser == "All":
@@ -86,14 +86,19 @@ def main_fun(odb, fieldNameToOutput, nodesetName, stepNameUser, dir_odb):
 	    COORD[i,3]=a[i].coordinates[2]      # Y COORDINATE        
 
     for stepName in stepNamesAll:
-        export_field_at_node_location_one_timestep(odb, stepName, increment, nodesetUser, nodesetName, COORD, fieldNameToOutput, dirToSave)
+        export_field_at_node_location_one_timestep(odb, stepName, increment, nodesetUser, nset, COORD, fieldNameToOutput, dirToSave)
 
 
 # Inputs
-fieldNameToOutput = "U"     # or U
-nodesetName="TOPRANGERSURFACE"       
-stepNameUser="Geostatic"    # "All" or "Geostatic"
-partName="Part_1"           #
+field_to_extract = "stress"   # displacement or stress
+stepNameUser="All"                  # "All" or "Geostatic"
+partName="Part_1"                   #
+if field_to_extract == "displacement":
+    fieldNameToOutput = "U"    
+    nsetNames=["TOPRANGERSURFACE", "TOPBC"]   
+elif field_to_extract == "stress":
+    fieldNameToOutput = "S"    
+    nsetNames=["COMPTONLOSALAMITOS_A", "COMPTONLOSALAMITOS_B", "COMPTONLOSALAMITOS_C", "NEWPORT", "PALOSVERDES", "TEAR_FAULT_2", "TEAR_FAULT_4", "TEAR_FAULT_5", "TEAR_FAULT_6", "TEAR_FAULT_8A", "TEAR_FAULT_8B", "TEAR_FAULT_9", "TEAR_FAULT_10A", "TEAR_FAULT_10B", "TEAR_FAULT_11", "TEAR_FAULT_13A", "TEAR_FAULT_13B", "TEAR_FAULT_15", "TEAR_FAULT_19", "TEAR_FAULT_21A", "TEAR_FAULT_21B", "TEAR_FAULT_26", "TEAR_FAULT_27"] 
 
 # Paths
 dir_odb = "./output/elastic/"
@@ -102,4 +107,5 @@ print("\n \t Reading file "+fileNameToRead+"\n ")
 
 # Get data
 odb = openOdb(path=fileNameToRead)
-main_fun(odb, fieldNameToOutput, nodesetName, stepNameUser, dir_odb)
+for nset in nsetNames:
+    main_fun(odb, fieldNameToOutput, nset, stepNameUser, dir_odb)
