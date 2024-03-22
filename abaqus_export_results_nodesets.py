@@ -13,8 +13,8 @@ def export_field_at_node_location_one_timestep(odb, stepName, increment, nodeset
     tmp = odb.steps[stepName].frames[increment].fieldOutputs[fieldNameToOutput]
 
     if fieldNameToOutput == "S":
+        # We need ELEMENT_NODAL if we are requesting a node set.
         field = tmp.getSubset(position=ELEMENT_NODAL, region=nodesetUser)
-        #field = tmp.getSubset(position=CENTROID,region=nodesetUser)
     elif fieldNameToOutput == "U":
         field = tmp.getSubset(position=NODAL, region=nodesetUser)    
 
@@ -53,7 +53,7 @@ def export_field_at_node_location_one_timestep(odb, stepName, increment, nodeset
         if fieldNameToOutput == "U":
 	        f.write('%d, %0.3f, %0.3f, %0.3f\n' % (field_out[i, 0], field_out[i, 1], field_out[i, 2], field_out[i, 3]))
         elif fieldNameToOutput == "S":
-            f.write('%d, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f, %0.3f\n' % (field_out[i, 0], field_out[i, 1], field_out[i, 2], field_out[i, 3], field_out[i, 4], field_out[i, 5], field_out[i, 6]))
+            f.write('%d, %0.0f, %0.0f, %0.0f, %0.0f, %0.0f, %0.0f\n' % (field_out[i, 0], field_out[i, 1], field_out[i, 2], field_out[i, 3], field_out[i, 4], field_out[i, 5], field_out[i, 6]))
     f.close()
 
 def main_fun(odb, fieldNameToOutput, nset, stepNameUser, dir_odb):
@@ -70,6 +70,9 @@ def main_fun(odb, fieldNameToOutput, nset, stepNameUser, dir_odb):
         stepNamesAll = list(odb.steps.keys()) ## get a list of all time steps names
     elif stepNameUser == "Geostatic":
         stepNamesAll = [stepNameUser]
+    elif type(stepNameUser) == list:
+        stepNamesAll = list(odb.steps.keys())
+        stepNamesAll = [stepNamesAll[i] for i in stepNameUser]
     else:
         raise Exception("\n \t Error!! User input time step name not found")
         
@@ -90,9 +93,9 @@ def main_fun(odb, fieldNameToOutput, nset, stepNameUser, dir_odb):
 
 
 # Inputs
-field_to_extract = "stress"   # displacement or stress
-stepNameUser="All"                  # "All" or "Geostatic"
-partName="Part_1"                   #
+field_to_extract = "stress"                                 # displacement or stress
+stepNameUser=[0] + list(range(12, 301, 12))                 # "All" or "Geostatic" or list of numbers with tsteps
+partName="Part_1"                                           #
 if field_to_extract == "displacement":
     fieldNameToOutput = "U"    
     nsetNames=["TOPRANGERSURFACE", "TOPBC"]   
