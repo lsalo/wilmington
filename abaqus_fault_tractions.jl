@@ -1,6 +1,7 @@
-"""
+#=
+Script to compute fault tractions at wilmington
+=#
 
-"""
 # Cd into current directory and activate the Julia environment in this directory
 cd(@__DIR__)
 using Pkg
@@ -14,8 +15,12 @@ GLMakie.activate!()
 using Colors
 using ColorSchemes
 using LaTeXStrings
+using DelimitedFiles
+using Statistics
 
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+includet(joinpath(lib_dir, "modules", "faultOperations.jl"))
+using .FaultOperations
 includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
 using .GridOperations
 includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
@@ -32,27 +37,14 @@ nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connect
 
 # Get nodeset faces - for now tetrahedra only
 nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b"]
-face_list = [zeros(Int64, 0, 3) for _ in 1:length(nsets_to_export)]
-for nset in eachindex(nsets_to_export)
-    nset_id = findfirst(nset_names_inp .== nsets_to_export[nset])
-    nset_list =  nset_inp[nset_id]
+face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
-    for row in eachrow(elements_inp[1][:, 2:end])
-        in_nset = in.(row, Ref(nset_list))
-        if sum(in_nset) == 3                                             # element contains a face in the nodeset
-            face_list[nset] = vcat(face_list[nset], sort(row[in_nset])')
-        elseif sum(in_nset) > 3
-            error("Multiple fault faces in a single element? Check")
-        end
-    end
-    face_list[nset] = unique(face_list[nset], dims=1)                     # remove duplicate faces
-end
-
-# Face centroids and normals, and assign normal vectors to each node (where we export the stress from Abaqus)
-# Get coordinates from nodes_inp, we'll have a loop for each face
-unit_normals = [zeros(Float64, 0, 3) for _ in 1:length(nsets_to_export)]
+# Face centroids and normals
+face_unit_normals = [zeros(Float64, 0, 3) for _ in 1:length(nsets_to_export)]
+face_centroids = [zeros(Float64, 0, 3) for _ in 1:length(nsets_to_export)]
 for nset in eachindex(nsets_to_export)
     faces = face_list[nset]
+
     for face_node_ids in eachrow(faces)
         # Coords of face nodes
         coords = nodes_inp[in.(nodes_inp[:,1], Ref(face_node_ids)), 2:end]
@@ -65,32 +57,109 @@ for nset in eachindex(nsets_to_export)
             if n[i] != 0
                 sgn = n[i] >= 0 ? 1 : -1
                 n = n .* sgn / norm(n)  
-                unit_normals[nset] = vcat(unit_normals[nset], n')
+                face_unit_normals[nset] = vcat(face_unit_normals[nset], n')
                 break
             end
         end
 
+        # centroids
+        x = (coords[1,1] + coords[2,1] + coords[3,1]) / 3
+        y = (coords[1,2] + coords[2,2] + coords[3,2]) / 3 
+        z = (coords[1,3] + coords[2,3] + coords[3,3]) / 3
+        face_centroids[nset] = vcat(face_centroids[nset], [x, y, z]')   
+    end
+
+end
+
+# Assign normal vectors to each node (where we export the stress from Abaqus)
+# Calculate shear, normal tractions at each node
+repeated_nodes = true
+nodal_tractions = [zeros(Union{Int64, Float64}, 0, 3) for _ in 1:length(nsets_to_export)]
+for nset in eachindex(nsets_to_export)
+    tstep = "Geostatic"
+    nodal_stress = readdlm(join([dir_abaqus, nsets_to_export[nset], "/", tstep, ".dat"]), ',', Int64, '\n', skipstart=1)
+    nodal_stress = sortslices(nodal_stress, dims=1, by=x->x[1])
+    
+    # Assign normals to nodes based on distance of node to face centroids
+    # Average nodal stresses in case of repeated nodes (extrapolation of stress to the nodes)
+    unique_ids = sort(unique(face_list[nset]))
+    tmp = zeros(Int, length(unique_ids), 7)
+    node_unit_normals = zeros(Union{Int64, Float64}, length(unique_ids), 4)
+    for (i, node) in enumerate(unique_ids)
+        if repeated_nodes
+            tmp[i, 1] = node
+            id_rows = nodal_stress[:,1] .== node
+            tmp[i, 2:end] = Int.(round.(mean(nodal_stress[id_rows, 2:end], dims=1)))
+        end
+
+        node_unit_normals[i, 1] = node
+        node_coord = nodes_inp[nodes_inp[:,1] .== node, 2:end]
+        dist = sqrt.(sum((face_centroids[nset] .- node_coord) .^2, dims=2))
+        node_unit_normals[i, 2:end] = face_unit_normals[nset][argmin(dist)[1], :]
+    end
+    if repeated_nodes
+        nodal_stress = tmp
+    end
+
+    # tractions
+    n = node_unit_normals[:, 2:end]
+    s = nodal_stress[:, 2:end]
+    sxx = s[:,1]
+    syy = s[:,2]
+    szz = s[:,3]
+    sxy = s[:,4]
+    sxz = s[:,5]
+    syz = s[:,6]
+
+    tx = sxx.*n[:,1] + sxy.*n[:,2] + sxz.*n[:,3]
+    ty = sxy.*n[:,1] + syy.*n[:,2] + syz.*n[:,3]
+    tz = sxz.*n[:,1] + syz.*n[:,2] + szz.*n[:,3]
+
+    t = hcat(tx, ty, tz)
+    tn = dot.(eachrow(n), eachrow(t))
+    ts = sqrt.(norm.(eachrow(t)).^2 - tn.^2)
+    
+    tmp = Matrix{Union{Int64, Float64}}(undef, length(unique_ids), 3)
+    tmp[:, 1] = unique_ids
+    tmp[:, 2:end] = hcat(tn, ts)
+    nodal_tractions[nset] = tmp
+
+    # Export a file with node, ts, tn, 
+    open(join([dir_abaqus, nsets_to_export[nset], "/tractions_", tstep, ".dat"]), "w") do f
+        for row in eachrow(nodal_tractions[nset])
+            println(f, join(row, "\t"))
+        end
     end
 end
 
-# Calculate shear, normal tractions at each node
-# Export a file with node, ts, tn, 
 
 # Test plot
-# Better like this than using a loop to have unique 1 to n numbering and plot without lines showing fault segment boundaries
+# Better like this than using a loop: unique 1 to n numbering and plot without lines showing fault segment boundaries
+# we assume nodes_inp to be monotonically increasing
+unique_ids = sort(unique(vcat(face_list...)))   # nodes may still be repeated when >1 nodesets share nodes
 coords_map = Vector{}(undef, 1)
-vals_nodes = Vector{}(undef, 1)
-face_list_map = Vector{}(undef, 1)
-unique_ids = sort(unique(vcat(face_list...)))
 coords_map[1] = nodes_inp[in.(nodes_inp[:, 1], Ref(unique_ids)), 2:end]
-vals_nodes[1] = coords[:, 3] ./ 1e3
+
+# vals nodes
+vals_nodes = Vector{}(undef, 1)
+tmp = sortslices(vcat(nodal_tractions...), dims=1, by=x->x[1])
+nodal_tractions_plot = zeros(Float64, length(unique_ids), 2)
+for (i, node) in enumerate(unique_ids) 
+    id_rows = tmp[:,1] .== node
+    nodal_tractions_plot[i, :] = mean(tmp[id_rows, 2:end], dims=1)
+end
+vals_nodes[1] = nodal_tractions_plot[:,1] ./ 1e6 # MPa
+
+# face connectivity
+face_list_map = Vector{}(undef, 1)
 face_list_map[1], _ = renumber_array_1_to_n(vcat(face_list...))
 
-mycmap = reverse(cgrad(:turbid))
-fig_descriptor = (cmap=mycmap, cbar_label=L"$z$ [km]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "Depth", target_dpi=350, target_size_in=(8,6))
+mycmap = cgrad(:nipy_spectral)
+fig_descriptor = (cmap=mycmap, cbar_label=L"$t_\text{n}$ [MPa]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "t_n", target_dpi=350, target_size_in=(8,6))
 plotCellValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
 
 # test tractions
+#=
 S = [15 0 0; 0 12 0; 0 0 10]
 coord = [2 2 1; 6 3 0; 4 1 1]
 f = coord[2,:]-coord[1,:]
@@ -107,3 +176,4 @@ end
 t = S*n
 tn = dot(n, t)
 ts = sqrt(norm(t)^2 - tn^2)
+=#
