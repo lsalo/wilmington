@@ -72,7 +72,7 @@ for (i, node) in enumerate(unique_ids)
     id_rows = tmp[:,1] .== node
     nodal_tractions_plot[i, :] = mean(tmp[id_rows, 2:end], dims=1)
 end
-vals_nodes[1] = nodal_tractions_plot[:,2] ./ 1e6 # MPa
+vals_nodes[1] = nodal_tractions_plot[:,1] ./ 1e6 # MPa
 labl = L"$\sigma_\text{n}^\prime$ [MPa]" # "$|\tau|$ [MPa]"
 
 # face connectivity
