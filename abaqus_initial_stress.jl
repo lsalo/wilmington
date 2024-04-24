@@ -2,10 +2,9 @@
 Script to initialize stresses at Wilmington using FlatMaxwell model from SCEC CSM.
 
 Important notes:
-    1. We removed character # from FlatMaxwell.csv row 48, where the header is.
-    2. In our convention, S1 = maximum compressive, S2 = intermediate and S3 = minimum compressive or most tensional. Note that this is different than the convention used in FlatMaxwel.csv.
-
-TBD: Add another option to compute based on frictional limit, follow eq. in chapter 7 of Lund Snee thesis. To do this, the idea is to get average A_phi from all CSM stress models, then select stress regime in Wilmington area (likely reverse), and compute Sh and SH from Sv. Sv can be computed from avg density used in Abaqus to facilitate geostatic equilibrium. Option b would be taking it from FlatMaxwell model.
+    1. We removed character # from CSM stress .csv files, row 48, where the header is.
+    2. In our convention, S1 = maximum compressive, S2 = intermediate and S3 = minimum compressive or most tensional. Note that this is different than the convention used in the CSM stress .csv files
+    3. In Abaqus, Wilmington grid, s11 is // to x, s22 // y, and s33 // z.
 =#
 
 # Cd into current directory and activate the Julia environment in this directory
