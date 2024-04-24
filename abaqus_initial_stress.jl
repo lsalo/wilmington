@@ -27,43 +27,74 @@ using GLM
 #using ColorSchemes
 
 
-#lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-#includet(joinpath(lib_dir, "modules", "faultOperations.jl"))
-#using .FaultOperations
+lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
+using .GridOperations
 
 # Directories
+dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 dir_data = "C:/Users/lsalo/Wilmington/2023_SCEC_CSM/SCEC_CSM_archive_2023/"
 dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-# Read dModel data 
-stress_data_all = CSV.File(join([dir_data, "FlatMaxwell.csv"]), header=48, select=1:20, skipto=49)
+############################ 1. Stress models data ############################
+filenames = ["FlatMaxwell", "Hardebeck_FM", "Luttrell-2017", "YH14-K", "YHSM-2013"]
+stress_data_all = Vector{}(undef, length(filenames))
+for (i, fn) in enumerate(filenames)
+    if fn == "FlatMaxwell"
+        stress_data_all[i] = CSV.File(join([dir_data, fn, ".csv"]), header=48, select=1:20, skipto=49)
+    else
+        stress_data_all[i] = CSV.File(join([dir_data, fn, ".csv"]), header=48, select=[1, 2, 3, 14], skipto=49)
+    end
+end
 
 # Get subset: Wilmington area
 min_lon, max_lon = -118.41947, -117.93033 
 min_lat, max_lat = 33.58679, 33.93842
-row_ids = [min_lon <= row.LON <= max_lon && min_lat <= row.LAT <= max_lat && 0 <= row.DEP <= 16 for row in stress_data_all]
-stress_data = Matrix{Float64}(undef, sum(row_ids), length(stress_data_all.names))
-k = 1
-for (i, row) in enumerate(stress_data_all)
-    if row_ids[i] == 1
-        stress_data[k, :] = [getproperty(row, name) for name in stress_data_all.names]
-        k += 1
+stress_data = Vector{}(undef, length(filenames))
+for i in 1:length(filenames)
+    row_ids = [min_lon <= row.LON <= max_lon && min_lat <= row.LAT <= max_lat && 0 <= row.DEP <= 16 for row in stress_data_all[i]]
+    stress_data[i] = Matrix{Float64}(undef, sum(row_ids), length(stress_data_all[i].names))
+    k = 1
+    for (j, row) in enumerate(stress_data_all[i])
+        if row_ids[j] == 1
+            stress_data[i][k, :] = [getproperty(row, name) for name in stress_data_all[i].names]
+            k += 1
+        end
     end
 end
 
-# Least squares linear fit through the origin
-x = stress_data[:,3]
-lm_s1 = glm(@formula(y ~ x + x2 + x3 + x4 + 0), (x=x, x2=x.^2, x3=x.^3, x4=x.^4, y=stress_data[:,20]), Normal(), IdentityLink())
-lm_s2 = glm(@formula(y ~ x + x2 + x3 + x4 + 0), (x=x, x2=x.^2, x3=x.^3, x4=x.^4, y=stress_data[:,19]), Normal(), IdentityLink())
-lm_s3 = glm(@formula(y ~ x + 0), (x=x, y=stress_data[:,18]), Normal(), IdentityLink())
-#lm_sv = glm(@formula(y ~ x + 0), (x=x, y=stress_data[:,9]), Normal(), IdentityLink()) # basically equal to s3
+# FlatMaxwell least squares linear fit through the origin
+x = stress_data[1][:,3]
+lm_s1 = glm(@formula(y ~ x + x2 + x3 + x4 + 0), (x=x, x2=x.^2, x3=x.^3, x4=x.^4, y=stress_data[1][:,20]), Normal(), IdentityLink())
+lm_s2 = glm(@formula(y ~ x + x2 + x3 + x4 + 0), (x=x, x2=x.^2, x3=x.^3, x4=x.^4, y=stress_data[1][:,19]), Normal(), IdentityLink())
+lm_s3 = glm(@formula(y ~ x + 0), (x=x, y=stress_data[1][:,18]), Normal(), IdentityLink())
+#lm_sv = glm(@formula(y ~ x + 0), (x=x, y=stress_data[1][:,9]), Normal(), IdentityLink()) # basically equal to s3
 
-# Predict values based on sv and frictional constraints (Lund Snee Thesis, Chapter 7)
+# A_phi fit
+x = vcat(stress_data[1][:, 3], stress_data[2][:, 3], stress_data[3][:, 3], stress_data[4][:, 3], stress_data[5][:, 3])
+y = vcat(stress_data[1][:, 14], stress_data[2][:, 4], stress_data[3][:, 4], stress_data[4][:, 4], stress_data[5][:, 4])
+lm_aphi = glm(@formula(y ~ x), (x=x, y=y), Normal(), IdentityLink())
+x_fmx = stress_data[1][:, 3]
+lm_aphi_fmx = glm(@formula(y ~ x + x2 + x3 + x4), (x=x_fmx, x2 = x_fmx.^2, x3 = x_fmx.^3, x4 = x_fmx.^4, y=stress_data[1][:, 14]), Normal(), IdentityLink())
 
 
-# Calculate element centroids for all elements in geomechanics mesh
-# get inp file data
+############################# 2. Predict values based on sv and critically stressed crust (Lund Snee Thesis, Chapter 7) ############################ 
+z_plot = Vector{}(LinRange(0, -15, 41))
+a_phi = predict(lm_aphi, (x=(-1*z_plot),))
+p   = 1000*9.807.*z_plot*1e3./1e6         # MPa
+s3  = 2300*9.807.*z_plot*1e3./1e6         # MPa
+mu  = 0.6
+ratio_s1s3 = ((mu^2 +1)^0.5 + mu)^2       # effective stress ratio (S1 - p) / (S3 - p)
+s1 = ratio_s1s3*(s3 .- p) .+ p            # Reverse: S_H
+s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3     # Reverse: S_h
+
+
+
+#############################  3. Calculate element centroids and assign stress ############################# 
+fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
+nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
+
 # find nodes of each element in reservoir elset
 # nodal coordinates of each element and calculate centroids
 
@@ -73,17 +104,42 @@ lm_s3 = glm(@formula(y ~ x + 0), (x=x, y=stress_data[:,18]), Normal(), IdentityL
 # initial_stress_wilmington_rotated.inp
 
 # Plots 
-x_new = LinRange(0, 20, 41)
-f = Figure()
-ax = Axis(f[1, 1], xlabel = L"\text{Stress [MPa]}", ylabel = L"\text{Depth [km]}", xlabelsize = 16, ylabelsize = 16)
-sca1 = scatter!(ax, stress_data[:, 20], stress_data[:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\sigma_\text{11} \; (\text{FlatMaxwell})")
-sca2 = scatter!(ax, stress_data[:, 19], stress_data[:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_\text{22}")
-sca3 = scatter!(ax, stress_data[:, 18], stress_data[:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:grey, strokewidth=0.5, label=L"\sigma_\text{33}")
-lin1 = lines!(ax, predict(lm_s1, (x=x_new, x2=x_new.^2, x3=x_new.^3, x4=x_new.^4,)), x_new, color = :black, linewidth = 1.5, label=L"P_4 \; (\text{model fit})")
-lin2 = lines!(ax, predict(lm_s2, (x=x_new, x2=x_new.^2, x3=x_new.^3, x4=x_new.^4,)), x_new, color = :blue, linewidth = 1.5, label=L"P_4")
-lin3 = lines!(ax, predict(lm_s3, (x=x_new,)), x_new, color = RGBAf(0.6, 0.6, 0.6, 1.0), linewidth = 2, label=L"P_1")
-#lin4 = lines!(ax, predict(lm_sv, (x=x_new,)), x_new, color = RGBAf(0.8, 0.8, 0.8, 1.0), linewidth = 1) equal to s3
+x_plot = LinRange(0, 20, 41)
+mycmap=cgrad(:nipy_spectral)
+f = Figure(size=(900, 400))
+ax = Axis(f[1, 1], xlabel = L"A_\phi \text{ [-]}", ylabel = L"\text{Depth [km]}", xlabelsize = 16, ylabelsize = 16)
+band!(ax, [0, 1, 2, 3], [0, 0, 0, 0], [15, 15, 15, 15], color=[0, 1, 2, 3], colormap=reverse(cgrad(:roma)))
+lines!(ax, [1, 1], [0, 15], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.5)
+lines!(ax, [2, 2], [0, 15], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.5)
+text!(ax, 0.3, 0.7, text=L"\text{Normal}", fontsize=14, color = :black)
+text!(ax, 1.3, 0.7, text=L"\text{Strike slip}", fontsize=14, color = :black)
+text!(ax, 2.3, 0.7, text=L"\text{Reverse}", fontsize=14, color = :black)
+sca1 = scatter!(ax, stress_data[1][:, 14], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\text{FlatMaxwell}")
+sca2 = scatter!(ax, stress_data[2][:, 4], stress_data[2][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:grey, strokewidth=0.5, label=L"\text{Hardebeck FM}")
+sca3 = scatter!(ax, stress_data[3][:, 4], stress_data[3][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\text{Luttrell 2017}")
+sca4 = scatter!(ax, stress_data[4][:, 4], stress_data[4][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:green, strokewidth=0.5, label=L"\text{YH14 K}")
+sca5 = scatter!(ax, stress_data[5][:, 4], stress_data[5][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\text{YHSM 2013}")
+lin1 = lines!(ax, predict(lm_aphi, (x=x_plot,)), x_plot, color =RGBAf(0,0,0,1), linewidth = 1.5, label=L"P_1 \text{ model fit}")
+ylims!(ax, 15, 0)
+xlims!(ax, 0, 3)
+axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+
+ax = Axis(f[1, 2], xlabel = L"\text{Stress [MPa]}", xlabelsize = 16)
+sca1 = scatter!(ax, stress_data[1][:, 20], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0,0,0,1), strokewidth=0.5, label=L"S_1 \; (\text{FlatMaxwell})")
+sca2 = scatter!(ax, stress_data[1][:, 19], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.5,0.5,0.5,1), strokewidth=0.5, label=L"S_2")
+sca3 = scatter!(ax, stress_data[1][:, 18], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.8,0.8,0.8,1), strokewidth=0.5, label=L"S_3")
+lin1 = lines!(ax, predict(lm_s1, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0,0,0,1), linewidth = 1.5, label=L"P_4 \; (\text{model fit})")
+lin2 = lines!(ax, predict(lm_s2, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0.5,0.5,0.5,1), linewidth = 1.5, label=L"P_4")
+lin3 = lines!(ax, predict(lm_s3, (x=x_plot,)), x_plot, color = RGBAf(0.8,0.8,0.8,1), linewidth = 2, label=L"P_1")
+#lin4 = lines!(ax, predict(lm_sv, (x=x_plot,)), x_plot, color = RGBAf(0.8, 0.8, 0.8, 1.0), linewidth = 1) equal to s3
+lin4 = lines!(ax, s3, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3")
+lin5 = lines!(ax, s2, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{h} \text{ (crit. stress)}")
+lin6 = lines!(ax, s1, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{H} \text{ (crit. stress)}")
+lin7 = lines!(ax, p, z_plot*-1, color = :blue, linewidth = 1, linestyle = :solid, label=L"\rho_\text{w} g z")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -600)
-axislegend(position = :rt, framevisible=false) # rt = right-top
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) # rt = right-top
 f
+
+# Save
+save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
