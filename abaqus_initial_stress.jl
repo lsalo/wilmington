@@ -20,6 +20,7 @@ using CairoMakie
 CairoMakie.activate!()
 using LaTeXStrings
 using GLM 
+using Statistics
 
 #using DelimitedFiles
 #using Statistics
@@ -37,7 +38,8 @@ dir_data = "C:/Users/lsalo/Wilmington/2023_SCEC_CSM/SCEC_CSM_archive_2023/"
 dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-############################ 1. Stress models data ############################
+
+# 1. STRESS MODELS DATA
 filenames = ["FlatMaxwell", "Hardebeck_FM", "Luttrell-2017", "YH14-K", "YHSM-2013"]
 stress_data_all = Vector{}(undef, length(filenames))
 for (i, fn) in enumerate(filenames)
@@ -79,7 +81,8 @@ x_fmx = stress_data[1][:, 3]
 lm_aphi_fmx = glm(@formula(y ~ x + x2 + x3 + x4), (x=x_fmx, x2 = x_fmx.^2, x3 = x_fmx.^3, x4 = x_fmx.^4, y=stress_data[1][:, 14]), Normal(), IdentityLink())
 
 
-############################# 2. Predict values based on sv and critically stressed crust (Lund Snee Thesis, Chapter 7) ############################ 
+# 2. PREDICT STRESS MAGNITUDES BASED ON CRITICALLY STRESSED CRUST
+# Ref: Lund Snee Thesis, Chapter 7
 z_plot = Vector{}(LinRange(0, -15, 41))
 a_phi = predict(lm_aphi, (x=(-1*z_plot),))
 p   = 1000*9.807.*z_plot*1e3./1e6         # MPa
@@ -90,20 +93,26 @@ s1 = ratio_s1s3*(s3 .- p) .+ p            # Reverse: S_H
 s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3     # Reverse: S_h
 
 
-
-#############################  3. Calculate element centroids and assign stress ############################# 
+# 3. ELEMENT CENTROIDS AND ASSIGN STRESS
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
-
-# find nodes of each element in reservoir elset
-# nodal coordinates of each element and calculate centroids
+elements_all = vcat(elements_inp...)
+centroids = get_element_centroids_inp(elements_all, nodes_inp)
 
 # Assign stress based on depth
+# ABAQUS coordinate system: s11 // x, s22 // y, s33 // z
+z = centroids[:, end]
+p = 1000*9.807.*z   
+s3 = 2300*9.807.*z  
+s1 = ratio_s1s3*(s3 .- p) .+ p 
+s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3 
 
 # Save file for use with Abaqus
+# NOTE: EFFECTIVE STRESSES!
 # initial_stress_wilmington_rotated.inp
 
-# Plots 
+
+# 4. PLOTS
 x_plot = LinRange(0, 20, 41)
 mycmap=cgrad(:nipy_spectral)
 f = Figure(size=(900, 400))
