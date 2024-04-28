@@ -20,12 +20,9 @@ CairoMakie.activate!()
 using LaTeXStrings
 using GLM 
 using Statistics
-
-#using DelimitedFiles
-#using Statistics
+using DelimitedFiles
 #using Colors
 #using ColorSchemes
-
 
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
 includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
@@ -98,18 +95,21 @@ nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connect
 elements_all = vcat(elements_inp...)
 centroids = get_element_centroids_inp(elements_all, nodes_inp)
 
-# Assign stress based on depth
+# Assign stress based on depth: tension postivie
 # ABAQUS coordinate system: s11 // x, s22 // y, s33 // z
 z = centroids[:, end]
-p = 1000*9.807.*z   
+a_phi = predict(lm_aphi, (x=(-1e-3*z),))
+p = -1000*9.807.*z   
 s3 = 2300*9.807.*z  
-s1 = ratio_s1s3*(s3 .- p) .+ p 
+s1 = ratio_s1s3*(s3 .+ p) .- p 
 s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3 
+t = zeros(length(z))
 
 # Save file for use with Abaqus
 # NOTE: EFFECTIVE STRESSES!
 # initial_stress_wilmington_rotated.inp
-
+stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
+writedlm(join([dir_out, "initial_stress_criticallyStressed_mu0.6.inp"]), stress_out, ',')
 
 # 4. PLOTS
 x_plot = LinRange(0, 20, 41)
