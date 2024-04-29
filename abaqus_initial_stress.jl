@@ -107,9 +107,8 @@ t = zeros(length(z))
 
 # Save file for use with Abaqus
 # NOTE: EFFECTIVE STRESSES!
-# initial_stress_wilmington_rotated.inp
 stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
-writedlm(join([dir_out, "initial_stress_criticallyStressed_mu0.6.inp"]), stress_out, ',')
+writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), stress_out, ',')
 
 # 4. PLOTS
 x_plot = LinRange(0, 20, 41)
