@@ -31,32 +31,38 @@ b = 52.41
 R = 1.227
 W = 0.27
 D = 0.7143 # 1/kbar
-e_p0 = 0.3
-p_b0 = maximum(p_ini) + (1/3)*(1/D)*log(e_p0/W + 1)*1e2 # MPa
+e_p0 = 0
+#p_b0 = maximum(p_ini) + (1/3)*(1/D)*log(e_p0/W + 1)*1e2 # MPa
+p_b0 = maximum(p_ini)*exp(e_p0/W)
 
 p_Fs = Vector{}(0:10:100)
 q_Fs = p_Fs.*tand(b) .+ d
 
 p_a = (p_b0 - R*d) / (1 + R*tand(b))
 q_Fc = vcat(Vector{}(0:1:31), 31.1:.1:31.7, 31.71:.01:31.73)
+#q_Fc = Vector{}(0:1:80)
 p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
 # Hardening curve
 e_p = Vector{}(0:0.01:0.4)
-p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
+#p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
+p_b = maximum(p_ini)*exp.(e_p/W)
 
 # Plot
 f = Figure(size=(800, 400))
 ax = Axis(f[1, 1], xlabel = L"p = -\frac{\sigma_{kk}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
 ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s}")
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :dashdot, label=L"F_\text{c}")
-sc1 = scatter!(ax, p_ini, q_ini, markersize = 7, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\text{\sigma_0 (Ranger)}")
+sc1 = scatter!(ax, p_ini, q_ini, markersize = 5, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\text{\sigma_0 (Ranger)}")
+text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
 xlims!(ax, 0, 100)
 ylims!(ax, 0, 100)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 
-ax = Axis(f[1, 2], xlabel = L"e^\text{in} \; \text{ [-]}", ylabel = L"p_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
+ax = Axis(f[1, 2], xlabel = L"e^\text{in}_\text{v} \; \text{ [-]}", ylabel = L"p_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
 ln1 = lines!(ax, e_p, p_b, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
 xlims!(ax, 0, 0.4)
-ylims!(ax, 0, 150)
+ylims!(ax, 0, 300)
 f
+
+save(join([figs_dir, "cap_model.pdf"]), f, pt_per_unit = 1)
