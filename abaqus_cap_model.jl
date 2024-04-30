@@ -44,9 +44,12 @@ q_Fc = vcat(Vector{}(0:1:31), 31.1:.1:31.7, 31.71:.01:31.73)
 p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
 # Hardening curve
-e_p = Vector{}(0:0.01:0.4)
+e_p = Vector{}(0:0.025:0.5)
 #p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
 p_b = maximum(p_ini)*exp.(e_p/W)
+
+to_save = hcat(p_b*1e6, e_p)
+writedlm(join([dir_in, "hardening_curve_test.inp"]), to_save, ',')
 
 # Plot
 f = Figure(size=(800, 400))
@@ -65,4 +68,4 @@ xlims!(ax, 0, 0.4)
 ylims!(ax, 0, 300)
 f
 
-save(join([figs_dir, "cap_model.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "cap_model.pdf"]), f, pt_per_unit = 1)
