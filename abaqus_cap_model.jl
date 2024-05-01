@@ -20,11 +20,15 @@ figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
 id_ranger = 1:67736     # elements of Ranger elementset, grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
 stress_ini = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
 stress_ini = stress_ini[id_ranger, 2:end]/1e6 # MPa
-
 p_ini = vec(-(1/3)*sum(stress_ini[:,1:3], dims=2))
 #stress_dev_ini = stress_ini
 #stress_dev_ini[:, 1:3] = stress_dev_ini[:, 1:3] .+ p_ini
 q_ini = sqrt.( 0.5*((stress_ini[:,1] - stress_ini[:,2]).^2 .+ (stress_ini[:,2] - stress_ini[:,3]).^2 .+ (stress_ini[:,3] - stress_ini[:,1]).^2) )
+
+centroids = readdlm(join([dir_in, "element_centroids.dat"]), ',')
+depth_ranger_elems = centroids[id_ranger, end]
+nodal_depth = readdlm(join([dir_in, "nodal_depth.dat"]), ',')
+peff_ini_nod = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
 
 # Cap model parameters 
 d = 0
@@ -45,12 +49,20 @@ q_Fc = vcat(Vector{}(0:1:31), 31.1:.1:31.7, 31.71:.01:31.73)
 p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
 # Hardening curve
-e_p = Vector{}(0:0.025:0.5)
 #p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
-p_b = maximum(p_ini)*exp.(e_p/W)
-
-to_save = hcat(map(x -> @sprintf("%.2f", x), p_b*1e6), e_p) # NOTE: number formats like 1.315e7 won't work in Abaqus
-writedlm(join([dir_in, "hardening_curve_test.inp"]), to_save, ',')
+z_pt = -[890, 900, 1420, 1430, 2890, 3000]
+e_p = Vector{}(0:0.1:0.4)
+p_b = Vector{}(undef, 3)
+peff_id = Vector{}(undef, 3)
+for i in 1:3
+    id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
+    peff_id[i] = peff_ini_nod[id, end]
+    p_b[i] = 0.9*peff_id[i]*exp.(e_p/W)
+end
+p_b_str = map(x -> @sprintf("%.2f", x), vcat(p_b...))
+peff_id_str = map(x -> @sprintf("%.2f", x), peff_id)
+to_save = hcat(p_b_str, repeat(e_p, 3, 1), zeros(15), repeat(peff_id_str, inner=5)) # NOTE: number formats like 1.315e7 won't work in Abaqus
+writedlm(join([dir_in, "hardening_curve_test_peff.inp"]), to_save, ",\t")
 
 # Plot
 f = Figure(size=(800, 400))

@@ -21,6 +21,7 @@ using LaTeXStrings
 using GLM 
 using Statistics
 using DelimitedFiles
+using Printf
 #using Colors
 #using ColorSchemes
 
@@ -81,12 +82,12 @@ lm_aphi_fmx = glm(@formula(y ~ x + x2 + x3 + x4), (x=x_fmx, x2 = x_fmx.^2, x3 = 
 # Ref: Lund Snee Thesis, Chapter 7
 z_plot = Vector{}(LinRange(0, -15, 41))
 a_phi = predict(lm_aphi, (x=(-1*z_plot),))
-p   = 1000*9.807.*z_plot*1e3./1e6         # MPa
-s3  = 2300*9.807.*z_plot*1e3./1e6         # MPa
+p_plot   = 1000*9.807.*z_plot*1e3./1e6         # MPa
+s3_plot  = 2300*9.807.*z_plot*1e3./1e6         # MPa
 mu  = 0.6
 ratio_s1s3 = ((mu^2 +1)^0.5 + mu)^2       # effective stress ratio (S1 - p) / (S3 - p)
-s1 = ratio_s1s3*(s3 .- p) .+ p            # Reverse: S_H
-s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3     # Reverse: S_h
+s1_plot = ratio_s1s3*(s3_plot .- p_plot) .+ p_plot            # Reverse: S_H
+s2_plot = (a_phi .- 2.0).*(s1_plot .- s3_plot) .+ s3_plot     # Reverse: S_h
 
 
 # 3. ELEMENT CENTROIDS AND ASSIGN STRESS
@@ -105,10 +106,22 @@ s1 = ratio_s1s3*(s3 .+ p) .- p
 s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3 
 t = zeros(length(z))
 
+# Also get mean stress, so that the hardening curve is a function of depth
+z_nod = nodes_inp[:, end]
+a_phi = predict(lm_aphi, (x=(-1e-3*z_nod),)) 
+p_nod = -1000*9.807.*z_nod  
+s3_nod = 2300*9.807.*z_nod  
+s1_nod = ratio_s1s3*(s3_nod .+ p_nod) .- p_nod 
+s2_nod = (a_phi .- 2.0).*(s1_nod .- s3_nod) .+ s3_nod
+peff_ini_nod = vec(-(1/3)*sum(hcat(s1_nod .+ p_nod, s2_nod .+ p_nod, s3_nod .+ p_nod), dims=2))
+
 # Save file for use with Abaqus
 # NOTE: EFFECTIVE STRESSES!
 stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
 writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), stress_out, ',')
+writedlm(join([dir_out, "element_centroids.dat"]), centroids, ',')
+writedlm(join([dir_out, "peff_ini_nod.inp"]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
+writedlm(join([dir_out, "nodal_depth.dat"]), hcat(nodes_inp[:, 1], nodes_inp[:, end]), ',')
 
 # 4. PLOTS
 x_plot = LinRange(0, 20, 41)
@@ -139,14 +152,14 @@ lin1 = lines!(ax, predict(lm_s1, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plo
 lin2 = lines!(ax, predict(lm_s2, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0.5,0.5,0.5,1), linewidth = 1.5, label=L"P_4")
 lin3 = lines!(ax, predict(lm_s3, (x=x_plot,)), x_plot, color = RGBAf(0.8,0.8,0.8,1), linewidth = 2, label=L"P_1")
 #lin4 = lines!(ax, predict(lm_sv, (x=x_plot,)), x_plot, color = RGBAf(0.8, 0.8, 0.8, 1.0), linewidth = 1) equal to s3
-lin4 = lines!(ax, s3, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3")
-lin5 = lines!(ax, s2, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{h} \text{ (crit. stress)}")
-lin6 = lines!(ax, s1, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{H} \text{ (crit. stress)}")
-lin7 = lines!(ax, p, z_plot*-1, color = :blue, linewidth = 1, linestyle = :solid, label=L"\rho_\text{w} g z")
+lin4 = lines!(ax, s3_plot, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3")
+lin5 = lines!(ax, s2_plot, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{h} \text{ (crit. stress)}")
+lin6 = lines!(ax, s1_plot, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{H} \text{ (crit. stress)}")
+lin7 = lines!(ax, p_plot, z_plot*-1, color = :blue, linewidth = 1, linestyle = :solid, label=L"\rho_\text{w} g z")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -600)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) # rt = right-top
 f
 
 # Save
-save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
+# save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
