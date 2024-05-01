@@ -8,6 +8,7 @@ using Pkg
 Pkg.activate(@__DIR__)
 
 using DelimitedFiles
+using Printf
 using CairoMakie
 CairoMakie.activate!()
 
@@ -48,12 +49,12 @@ e_p = Vector{}(0:0.025:0.5)
 #p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
 p_b = maximum(p_ini)*exp.(e_p/W)
 
-to_save = hcat(p_b*1e6, e_p)
+to_save = hcat(map(x -> @sprintf("%.2f", x), p_b*1e6), e_p) # NOTE: number formats like 1.315e7 won't work in Abaqus
 writedlm(join([dir_in, "hardening_curve_test.inp"]), to_save, ',')
 
 # Plot
 f = Figure(size=(800, 400))
-ax = Axis(f[1, 1], xlabel = L"p = -\frac{\sigma_{kk}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
+ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
 ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s}")
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :dashdot, label=L"F_\text{c}")
 sc1 = scatter!(ax, p_ini, q_ini, markersize = 5, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\text{\sigma_0 (Ranger)}")
