@@ -8,8 +8,32 @@
 # In Julia REPL: ] activate . or using Pkg; Pkg.activate("path/to/project') (to activate environment in project folder)
 
 # 0. Load modules
-# REMEMBER: Update path in include file below (windows vs mac)
-# In Julia REPL: include("startup_mrst_results_plot.jl") # Run in julia REPL (once at the beginning of session).
+cd(@__DIR__)
+using Pkg
+Pkg.activate(@__DIR__)
+
+# General
+using Revise
+using DelimitedFiles
+using StatsBase
+using Base.Iterators
+using MAT
+
+# Plots
+using GLMakie
+GLMakie.activate!()
+using Colors
+using ColorSchemes
+
+# Mine
+#lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
+lib_dir = "C:\\Users\\lsalo\\julia\\jl-tools\\"
+includet(joinpath(lib_dir, "modules", "polyconnectivity.jl"))
+using .PolyConnectivity
+includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
+using .GridOperations
+includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
+using .PlotFromMRST
 
 # 1. Load data from MRST grid
 in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmington\\grid\\"             #"/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
