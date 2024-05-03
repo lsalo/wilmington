@@ -9,7 +9,7 @@
 
 # 0. Load modules
 # REMEMBER: Update path in include file below (windows vs mac)
-# In Julia REPL: include("startup_mrst_plot_results.jl") # Run in julia REPL (once at the beginning of session).
+# In Julia REPL: include("startup_mrst_results_plot.jl") # Run in julia REPL (once at the beginning of session).
 
 # 1. Load data from MRST grid
 in_dir           = "C:\\Users\\lsalo\\matlab\\mrst-dev\\mrst-ls\\ls-proj\\wilmington\\grid\\"             #"/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
