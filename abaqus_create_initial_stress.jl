@@ -26,8 +26,8 @@ using Printf
 #using ColorSchemes
 
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
-using .GridOperations
+includet(joinpath(lib_dir, "modules", "abaqus.jl"))
+using .Abaqus
 
 # Directories
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"

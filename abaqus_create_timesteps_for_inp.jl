@@ -25,6 +25,7 @@ open(fileNameToSave, "w") do f
     t_inc_max_s = tstep_size_s
     for (i, fileName) in enumerate(fileNames)
         stepNumber=i
+        
         # Note: triple quotes for multiline strings, otherwise it will be interpreted as character
         str = """*step, name=step_$stepNumber, inc=1000, nlgeom=no, unsymm=yes
         *STATIC
@@ -33,9 +34,20 @@ open(fileNameToSave, "w") do f
         *Include, input=./nodal_dp_1936_to_1961/$fileName
         *contact controls, stabilize
         *Controls, ANALYSIS=DISCONTINUOUS
-        *end step
-        **
         """
+
+        if i < length(fileNames)
+            str2 = """*end step
+            **
+            """
+        else
+            str2 = """*Restart, WRITE
+            *end step
+            **
+            """  
+        end
+
+        str = join([str, str2])
         write(f, str)
     end
 end

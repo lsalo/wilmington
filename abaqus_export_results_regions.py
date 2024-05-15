@@ -54,7 +54,7 @@ def export_field_at_node_location_one_timestep(odb, stepName, increment, regionT
         
     # Write the output
     print("--Writing time step " + stepName)
-    fileNameToSave=dirToSave + stepName + ".dat"
+    fileNameToSave=dirToSave + stepName + "_nodes.dat"
     f=open(fileNameToSave, "w")
     for i in range(0, nNodes):
         if i == 0:
@@ -118,13 +118,13 @@ def main_fun(odb, fieldNameToOutput, regionType, regName, stepNameUser, dir_odb)
 
 
 # Paths
-dir_odb = "./output/elastic/"
-fileNameToRead=dir_odb + "wilmington_elastic.odb"
+dir_odb = "./output/plastic/"
+fileNameToRead=dir_odb + "wilmington_plastic.odb"
 print("\n \t Reading file "+fileNameToRead+"\n ")
 
 # Inputs
 regionType = "nodeset"                                   # elementset or nodeset
-field_to_extract = "stress"                                 # displacement or stress
+field_to_extract = "stress"                              # displacement or stress
 stepNameUser=[0] + list(range(12, 301, 12))                 # "All" or "Geostatic" or list of numbers with tsteps
 partName="Part_1"                                           #
 if regionType == 'nodeset':
@@ -135,7 +135,7 @@ if regionType == 'nodeset':
         fieldNameToOutput = "S"    
         regionNames=["COMPTONLOSALAMITOS_A", "COMPTONLOSALAMITOS_B", "COMPTONLOSALAMITOS_C", "NEWPORT", "PALOSVERDES", "TEAR_FAULT_2", "TEAR_FAULT_4", "TEAR_FAULT_5", "TEAR_FAULT_6", "TEAR_FAULT_8A", "TEAR_FAULT_8B", "TEAR_FAULT_9", "TEAR_FAULT_10A", "TEAR_FAULT_10B", "TEAR_FAULT_11", "TEAR_FAULT_13A", "TEAR_FAULT_13B", "TEAR_FAULT_15", "TEAR_FAULT_19", "TEAR_FAULT_21A", "TEAR_FAULT_21B", "TEAR_FAULT_26", "TEAR_FAULT_27", "WILMINGTON"] 
 elif regionType == 'elementset':
-    regionNames=["RANGER"]
+    regionNames=["RANGER", "OVERBURDENPICO"]
     if field_to_extract == "displacement":
         fieldNameToOutput = "U"          
     elif field_to_extract == "stress":
