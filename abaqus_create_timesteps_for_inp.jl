@@ -16,24 +16,22 @@ dir_out = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
 
 # Write timestep info
 fileNames=readdir(dir_p_abq)
-fileNameToSave=dir_out*"tsteps_1936_to_1961_p_varnum_2.inp"
+fileNameToSave=dir_out*"tsteps_1936_to_1961_p_varnum_2_simple.inp"
 p_variable_num = 2
 open(fileNameToSave, "w") do f
     str = ""
-    t_inc_ini_s = 3600*24*2 # 2 days
+    t_inc_ini_s = 3600*24*5 # 5 days
     tstep_size_s = 2629746  # from mrst: year/12
     t_inc_max_s = tstep_size_s
     for (i, fileName) in enumerate(fileNames)
         stepNumber=i
         
         # Note: triple quotes for multiline strings, otherwise it will be interpreted as character
-        str = """*step, name=step_$stepNumber, inc=1000, nlgeom=no, unsymm=yes
+        str = """*step, name=step_$stepNumber
         *STATIC
         $t_inc_ini_s, $tstep_size_s, 0, $t_inc_max_s
         *Field, variable=$p_variable_num
         *Include, input=./nodal_dp_1936_to_1961/$fileName
-        *contact controls, stabilize
-        *Controls, ANALYSIS=DISCONTINUOUS
         """
 
         if i < length(fileNames)

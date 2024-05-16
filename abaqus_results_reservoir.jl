@@ -136,5 +136,5 @@ f
 f = Figure(size=(400, 400))
 ax = Axis(f[1, 1], xlabel = L"\sigma_{33} \; \text{ [MPa]}", ylabel = L"u_3 \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16)
 sc1 = scatter!(ax, s_33/1e6, u_z, markersize = 8, color=:black, label=L"\text{Top Ranger } \max(u_3)")
-xlims!(ax, -10, -20)
+xlims!(ax, 0, 100)
 f

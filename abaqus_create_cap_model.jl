@@ -41,7 +41,7 @@ D = 0.7143 # 1/kbar
 # We define hydrostatic yield (p_b) as 110% of the initial p_eff
 #p_b = maximum(p_ini) .+ ((1/3)*(1/D)*log.(e_p./W .+ 1)*1e2) # MPa
 #z_pt = -[935, 940, 2835, 2840]
-z_pt = -[890, 900, 995, 1000, 1420, 1430, 2890, 3000]
+z_pt = -[890, 900, 1420, 1430, 2890, 3000]
 nc = Int(length(z_pt)/2)
 e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
 p_b = Vector{}(undef, nc)
@@ -50,11 +50,11 @@ for i in 1:nc
     id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
     peff_id[i] = peff_ini_nod[id, end]
     #p_b[i] = 1.2*peff_id[i]*exp.(e_p/W) 
-    p_b[i] = 1.16*peff_id[i] .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
+    p_b[i] = 1.18*peff_id[i] .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
 end
 p_b_str = map(x -> @sprintf("%.2f", x), vcat(p_b...))
 peff_id_str = map(x -> @sprintf("%.2f", x), peff_id)
-to_save = hcat(p_b_str, repeat(e_p, 4, 1), zeros(48), repeat(peff_id_str, inner=12)) # NOTE: number formats like 1.315e7 won't work in Abaqus
+to_save = hcat(p_b_str, repeat(e_p, nc, 1), zeros(nc*length(e_p)), repeat(peff_id_str, inner=length(e_p))) # NOTE: number formats like 1.315e7 won't work in Abaqus
 writedlm(join([dir_in, "hardening_curve_test_peff.inp"]), to_save, ",\t")
 
 # Plot
@@ -83,7 +83,6 @@ ax = Axis(f[1, 2], xlabel = L"e^\text{in}_\text{v} \; \text{ [-]}", ylabel = L"p
 ln1 = lines!(ax, e_p, p_b[1]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
 ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
 ln1 = lines!(ax, e_p, p_b[3]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
-ln1 = lines!(ax, e_p, p_b[4]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
 xlims!(ax, 0, 0.2)
 ylims!(ax, 0, 100)
 f
