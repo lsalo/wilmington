@@ -20,7 +20,7 @@ fileNameToSave=dir_out*"tsteps_1936_to_1961_p_varnum_2_simple.inp"
 p_variable_num = 2
 open(fileNameToSave, "w") do f
     str = ""
-    t_inc_ini_s = 3600*24*5 # 5 days
+    t_inc_ini_s = 3600*24*15 # 15 days
     tstep_size_s = 2629746  # from mrst: year/12
     t_inc_max_s = tstep_size_s
     for (i, fileName) in enumerate(fileNames)
