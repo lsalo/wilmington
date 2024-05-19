@@ -1,10 +1,15 @@
 # Code do compute pore pressure changes at nodal points (for Abaqus) based on cell-based pore pressure values from reservoir simulation (MRST)
 
 # startup 
+cd(@__DIR__)
+using Pkg
+Pkg.activate(@__DIR__)
+
 using MAT
 using DelimitedFiles
 using Revise
 using StatsBase
+using Printf
 
 using GLMakie
 GLMakie.activate!()
@@ -13,10 +18,12 @@ using ColorSchemes
 using LaTeXStrings
 
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
-using .GridOperations
-includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
-using .PlotFromMRST
+includet(joinpath(lib_dir, "modules", "abaqus.jl"))
+using .Abaqus
+includet(joinpath(lib_dir, "modules", "mrst.jl"))
+using .Mrst
+includet(joinpath(lib_dir, "modules", "makiePolyPlot.jl"))
+using .MakiePolyPlot
 
 # Directories
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -67,7 +74,8 @@ for i in 1:length(nodal_dp)
         for row in eachrow(data)
             if abs(row[2]) > 10    # we consider only values > 10 Pa
                 #writedlm(f, row', delim=",")
-                str=string(row[1])*","*string(row[2])*"\n"
+                v = map(x -> @sprintf("%.2f", x), row[2]) # NOTE: number formats like 1.315e7 may not work in Abaqus
+                str=string(row[1])*","*v*"\n"
                 write(f, str)
             end
         end
