@@ -11,12 +11,13 @@ using Revise
 println("Finished loading packages")
 
 # Filename and Directories
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_1975/"
 dir_out = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
 
 # Write timestep info
 fileNames=readdir(dir_p_abq)
-fileNameToSave=dir_out*"tsteps_1936_to_1961_p_varnum_2_simple.inp"
+dirName = "nodal_dp_1936_to_1975"
+fileNameToSave=dir_out*"tsteps_1936_to_1975.inp"
 p_variable_num = 2
 open(fileNameToSave, "w") do f
     str = ""
@@ -31,7 +32,7 @@ open(fileNameToSave, "w") do f
         *STATIC
         $t_inc_ini_s, $tstep_size_s, 0, $t_inc_max_s
         *Field, variable=$p_variable_num
-        *Include, input=./nodal_dp_1936_to_1961/$fileName
+        *Include, input=./$dirName/$fileName
         """
 
         if i < length(fileNames)

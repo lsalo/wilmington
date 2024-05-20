@@ -30,8 +30,8 @@ dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
 fn_G    = "wilmington_ranger_G_withGeometry.mat"
-dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/"
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus/"
+dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/1936_1975/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_1975/"
 fn_p    = "states_p_Pa.mat"
 fn_t    = "states_t_s.mat"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
@@ -49,8 +49,9 @@ nodes_to_cells, faces_nodes = map_nodes_to_cells(G, n2fn, f2cn)
 # This needs to be done at each timestep, and then compute Dp
 t = 1936 .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
 p = matread(join([dir_p fn_p]))["p"]
-#dp = p[:, 2:end] - p[:, 1:end-1] # dp from previous tstep (not from hydrostatic pressure)
-dp = p[:, 2:end] .- p[:, 1]        # dp from hydrostatic pressure
+p0 = matread(join([dir_p "state0_p_Pa.mat"]))["p0"]
+#dp = p[:, 1:end] - p0  # dp from previous tstep (not from hydrostatic pressure)
+dp = p[:, 1:end] .- p0      # dp from hydrostatic pressure
 nodal_dp = Vector{}(undef, size(dp, 2))
 for i in 1:length(nodal_dp)
     nodal_dp[i] = Dict((node_id, mean(dp[cell_ids, i])) for (node_id, cell_ids) in nodes_to_cells)
@@ -70,11 +71,11 @@ nodal_dp_inp_sorted = sortslices(nodal_dp_inp, dims=1)  # sort based on node id
 fn = "nodal_dp_"
 for i in 1:length(nodal_dp)
     data = hcat(nodal_dp_inp_sorted[:,1], nodal_dp_inp_sorted[:,i+1])
-    open(join([dir_p_abq, fn, string(round(t[i+1], digits=2)), ".dat"]), "w") do f
+    open(join([dir_p_abq, fn, string(round(t[i], digits=2)), ".dat"]), "w") do f
         for row in eachrow(data)
-            if abs(row[2]) > 10    # we consider only values > 10 Pa
+            if abs(row[2]) > 100    # we consider only values > 100 Pa (1 mbar)
                 #writedlm(f, row', delim=",")
-                v = map(x -> @sprintf("%.2f", x), row[2]) # NOTE: number formats like 1.315e7 may not work in Abaqus
+                v = map(x -> @sprintf("%.2f", x), row[2]) # NOTE: convert fromat because notation like 1.315e7 may not work in Abaqus
                 str=string(row[1])*","*v*"\n"
                 write(f, str)
             end
