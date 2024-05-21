@@ -51,7 +51,7 @@ t = 1936 .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
 p = matread(join([dir_p fn_p]))["p"]
 p0 = matread(join([dir_p "state0_p_Pa.mat"]))["p0"]
 #dp = p[:, 1:end] - p0  # dp from previous tstep (not from hydrostatic pressure)
-dp = p[:, 1:end] .- p0      # dp from hydrostatic pressure
+dp = p[:, 1:end] .- p[:, 1]     # bad convergence with p0, dp from first tstep (no inj yet)
 nodal_dp = Vector{}(undef, size(dp, 2))
 for i in 1:length(nodal_dp)
     nodal_dp[i] = Dict((node_id, mean(dp[cell_ids, i])) for (node_id, cell_ids) in nodes_to_cells)
@@ -73,7 +73,7 @@ for i in 1:length(nodal_dp)
     data = hcat(nodal_dp_inp_sorted[:,1], nodal_dp_inp_sorted[:,i+1])
     open(join([dir_p_abq, fn, string(round(t[i], digits=2)), ".dat"]), "w") do f
         for row in eachrow(data)
-            if abs(row[2]) > 100    # we consider only values > 100 Pa (1 mbar)
+            if abs(row[2]) > 10    # we consider only values > 10 Pa 
                 #writedlm(f, row', delim=",")
                 v = map(x -> @sprintf("%.2f", x), row[2]) # NOTE: convert fromat because notation like 1.315e7 may not work in Abaqus
                 str=string(row[1])*","*v*"\n"
