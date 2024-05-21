@@ -123,6 +123,10 @@ writedlm(join([dir_out, "element_centroids.dat"]), centroids, ',')
 writedlm(join([dir_out, "peff_ini_nod.inp"]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
 writedlm(join([dir_out, "nodal_depth.dat"]), hcat(nodes_inp[:, 1], nodes_inp[:, end]), ',')
 
+# Save Ranger-Pico element ids
+id_rp = vcat(elements_inp[1][:, 1], elements_inp[4][:, 1])
+writedlm(join([dir_out, "id_ranger_pico.dat"]), id_rp)
+
 # 4. PLOTS
 x_plot = LinRange(0, 20, 41)
 mycmap=cgrad(:nipy_spectral)

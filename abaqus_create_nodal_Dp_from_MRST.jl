@@ -85,22 +85,23 @@ end
 
 # Plot nodal dp using poly
 # get dp with respect to initial 
-nodal_dp_inp_ini = Matrix{Union{Int64, Float64}}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2])
-nodal_dp_inp_ini[:,1] = map_inp_to_mrst_node[:,2]
-nodal_dp_inp_ini[:,2:end] = nodal_dp_inp[:,2:end]
-nodal_dp_inp_ini = sortslices(nodal_dp_inp_ini, dims=1)  
+nodal_dp_inp_plot = Matrix{Union{Int64, Float64}}(undef, size(nodal_dp_inp)[1],  size(nodal_dp_inp)[2])
+nodal_dp_inp_plot[:,1] = map_inp_to_mrst_node[:,2]
+nodal_dp_inp_plot[:,2:end] = nodal_dp_inp[:,2:end]
+nodal_dp_inp_plot = sortslices(nodal_dp_inp_plot, dims=1)  
 
 # put variables in vector containers
+t_id = 309
 coords_map = Vector{}(undef, 1)
 cells_nodes_map_plot = Vector{}(undef, 1)
 cells_values_nodes = Vector{}(undef, 1)
 coords_map[1] = G["nodes"]["coords"]
 cells_nodes_map_plot[1] = faces_nodes
-cells_values_nodes[1] = nodal_dp_inp_ini[:,end]./1e5
+cells_values_nodes[1] = nodal_dp_inp_plot[:,t_id]./1e5
 
 # plot
 mycmap=cgrad(:curl)
 
 fig_descriptor = (cmap=mycmap, cbar_label=L"$\Delta p$ [bar]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.57*pi, plot_elev = 0.47*pi, plot_linew=0.1, xlms=(378449, 400339), ylms=(3.728e6, 3.752e6), save_fig = true, save_dir = figs_dir, title = "dp_reservoir_1961", target_dpi=350, target_size_in=(8,6))
 
-plotCellValues(cells_nodes_map_plot, coords_map, cells_values_nodes, fig_descriptor)
+plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, fig_descriptor)

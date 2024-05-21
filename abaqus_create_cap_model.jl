@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "entire_domain"  # entire_domain or ranger
+cap_case = "ranger-pico"  # entire_domain | ranger | ranger-pico
 
 
 # Read initial stress data and convert to cap stress space
@@ -31,6 +31,10 @@ if cap_case == "ranger"
     depth_ranger_elems = centroids[id_ranger, end]
 elseif cap_case == "entire_domain"
     stress_ini = stress_ini[:, 2:end]/1e6           # MPa
+elseif cap_case == "ranger-pico"
+    id_rp = vec(readdlm(join([dir_in, "id_ranger_pico.dat"]), Int))         # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
+    stress_ini = stress_ini[id_rp, 2:end]/1e6   # MPa
+    depth_elems = centroids[id_rp, end]
 end
 p_ini = vec(-(1/3)*sum(stress_ini[:,1:3], dims=2))
 q_ini = sqrt.( 0.5*((stress_ini[:,1] - stress_ini[:,2]).^2 .+ (stress_ini[:,2] - stress_ini[:,3]).^2 .+ (stress_ini[:,3] - stress_ini[:,1]).^2) ) # ok for shear stress = 0
@@ -49,11 +53,15 @@ D = 0.7143      # 1/kbar
 if cap_case == "ranger"
     z_pt = -[890, 900, 1420, 1430, 2890, 3000]
     e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
-    fn_hardening = "hardening_curve_test_peff.inp"
+    fn_hardening = "hardening_curve_peff_0.125Kosloff.inp"
 elseif cap_case == "entire_domain"
     z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
     e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
-    fn_hardening = "hardening_curve_test_peff_all.inp"
+    fn_hardening = "hardening_curve_peff_all.inp"
+elseif cap_case = "ranger-pico"
+    z_pt = -[400, 405, 890, 900, 1420, 1430, 2890, 3000]
+    e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+    fn_hardening = "hardening_curve_peff_0.125Kosloff_ranger-pico.inp"
 end
 nc = Int(length(z_pt)/2)
 p_b = Vector{}(undef, nc)
@@ -61,7 +69,7 @@ peff_id = Vector{}(undef, nc)
 for i in 1:nc
     id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
     peff_id[i] = peff_ini_nod[id, end]
-    p_b[i] = 1.18*peff_id[i] .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
+    p_b[i] = 1.18*peff_id[i] .+ 0.125*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
 end
 p_b_str = map(x -> @sprintf("%.2f", x), vcat(p_b...))
 peff_id_str = map(x -> @sprintf("%.2f", x), peff_id)
@@ -71,7 +79,7 @@ writedlm(join([dir_in, fn_hardening]), to_save, ",\t")
 # Plot
 # Cap Position
 e_p0 = 0
-if cap_case == "ranger"
+if cap_case == "ranger" || cap_case == "ranger-pico"
     p_Fs = Vector{}(0:10:100)
     q_Fc = Vector{}(0:1:78)
 elseif cap_case == "entire_domain"
@@ -89,7 +97,7 @@ ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 2, label=L"F
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.5, linestyle = :dashdot, label=L"F_\text{c}")
 sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
 #text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
-if cap_case == "ranger"
+if cap_case == "ranger" || cap_case == "ranger-pico"
     xlims!(ax, 0, 100)
     ylims!(ax, 0, 100)
 elseif cap_case == "entire_domain"
