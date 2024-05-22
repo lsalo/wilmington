@@ -6,43 +6,55 @@ cd(@__DIR__)
 using Pkg
 Pkg.activate(@__DIR__)
 
+using Distributed, SharedArrays
+addprocs(12)
+
 using LinearAlgebra
-using HDF5
+@everywhere using HDF5
 using DelimitedFiles
 using CairoMakie
 CairoMakie.activate!()
 
-using Revise
-lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+@everywhere using Revise
+@everywhere  lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+@everywhere includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
+@everywhere using .ArrayOps
 includet(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
 includet(joinpath(lib_dir, "modules", "fileio.jl"))
 using .Fileio
-includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
-using .ArrayOps
 
 
 # Directories and options
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/output/plastic/extracted/S/ENTIRE_DOMAIN/"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = readdir(abaqus_dir_el)
 abaqus_fn_el = sort(abaqus_fn_el, by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/output/plastic/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = readdir(abaqus_dir_nod)
 abaqus_fn_nod = sort(abaqus_fn_nod, by=sort_steps)
 
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/output/plastic/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = readdir(abaqus_dir_nod2)
 abaqus_fn_nod2 = sort(abaqus_fn_nod2, by=sort_steps)
+
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/U/TOPBC/"
+abaqus_fn_nod3 = readdir(abaqus_dir_nod3)
+abaqus_fn_nod3 = sort(abaqus_fn_nod3, by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
+
+tstep = 2629746 / 31556952
+t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=301)))
+t = t[vcat(1, 13:12:length(t))]
 
 
-# Get node of max subsidence, and uz vs s33 evolution for that node
+# Get subsidence
+# Ranger node of max subsidence, and uz vs s33 evolution for that node
 u_topranger_fin = readdlm(join([abaqus_dir_nod, abaqus_fn_nod[end]]), ',', skipstart=1)
 id_umax = argmin(u_topranger_fin[:, end])
 nod_umax = Int(u_topranger_fin[id_umax, 1])
@@ -54,8 +66,9 @@ for i in 1:n
     u_z[i] = file[id_umax, end]
 end
 
-s_33 = Vector{Int32}(undef, n)
-for i in 1:n
+#s_33 = Vector{Int32}(undef, n)
+s_33 = SharedArray{Int32}(n)
+@distributed for i in 1:n
     file = h5open(join([abaqus_dir_nod2, abaqus_fn_nod2[i]]), "r")
     abq_out = [read(file[name]) for name in ["NODE_LABEL", "Sxx", "Syy", "Szz", "Sxy", "Sxz", "Syz"]]
     abq_out = Int.(hcat(abq_out...))
@@ -64,7 +77,15 @@ for i in 1:n
     print("$i/$n completed\n")
 end
 
-# Get Ranger element with closest centroid to node above
+# Top node of max subsidence
+u_z_top = Vector{Float32}(undef, n)
+for i in 1:n
+    file = readdlm(join([abaqus_dir_nod3, abaqus_fn_nod3[i]]), ',', skipstart=1)
+    u_z_top[i] = minimum(file[:, end])
+end
+
+
+# Get Ranger element with closest centroid to node above, and stress evolution
 # Note that we assume that Ranger element ids start at 1, and data are sorted
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 id_elements = elements_inp[1][any(elements_inp[1][:, 2:5] .== nod_umax, dims=2), 1]
@@ -75,8 +96,6 @@ coord_nod_umax = nodes_inp[findfirst(nodes_inp[:, 1] .== nod_umax), 2:end]
 dist = mapslices(row -> norm(row - coord_nod_umax), centroids_els, dims=2)
 id_element = id_elements[argmin(dist)]
 
-
-# Get geostatic and final stresses
 n = length(abaqus_fn_el)
 s = Vector{}(undef, n)
 p_eff = Vector{Float32}(undef, n)
@@ -90,6 +109,12 @@ for i in 1:n
     q[i] = sqrt( 0.5*((s[i][1] - s[i][2])^2 + (s[i][2] - s[i][3])^2 + (s[i][3] - s[i][1])^2) + 6*(s[i][4]^2 + s[i][5]^2 + s[i][6]^2))
 end
 
+
+# -------------------------------------- PLOTS ---------------------------------------------------------
+# 
+# Plot 1: (a) stress path of ranger cell closest to node with max(u_z)
+#         (b) u_z vs s33 (top ranger)
+#
 # Plot parameters
 # Cap model parameters
 d = 1e-3        # MPa
@@ -111,7 +136,7 @@ p_Fs = Vector{}(0:10:50)
 q_Fs = p_Fs.*tand(b) .+ d
 
 p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))
-q_Fc = vcat(Vector{}(0:1:28))
+q_Fc = vcat(Vector{}(0:1:26), 26.1:.1:26.5)
 p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
 
@@ -119,22 +144,36 @@ p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 f = Figure(size=(800, 400))
 ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
 ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s}")
-ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :dashdot, label=L"F_\text{c}")
-sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 8, color=1:length(p_eff), colormap=:viridis, label=L"\text{Ranger element}")
+ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :solid, label=L"F_\text{c}")
+sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 5, color=1:length(p_eff), colormap=:viridis, label=L"\text{Ranger element}")
 xlims!(ax, 0, 50)
 ylims!(ax, 0, 50)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 
-ax = Axis(f[1, 2], xlabel = L"e^\text{in}_\text{v} \; \text{ [-]}", ylabel = L"p_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-ln1 = lines!(ax, e_p, p_b*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
-xlims!(ax, 0, 0.2)
-ylims!(ax, 0, 75)
+#ax = Axis(f[1, 2], xlabel = L"e^\text{in}_\text{v} \; \text{ [-]}", ylabel = L"p_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
+#ln1 = lines!(ax, e_p, p_b*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
+#xlims!(ax, 0, 0.2)
+#ylims!(ax, 0, 75)
+ax = Axis(f[1, 2], xlabel = L"\sigma_{33} \; \text{ [MPa]}", ylabel = L"u_3 \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16)
+sc1 = scatter!(ax, s_33/1e6, u_z, markersize = 8, color=:black, label=L"\max(u_3) \; \text{ (top Ranger)}")
+xlims!(ax, -10, -20)
+ylims!(ax, -6, 0)
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
+save(join([figs_dir, "stres_path_reservoir.pdf"]), f, pt_per_unit = 1)
 
 
-# Make plot displacement
-f = Figure(size=(400, 400))
-ax = Axis(f[1, 1], xlabel = L"\sigma_{33} \; \text{ [MPa]}", ylabel = L"u_3 \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16)
-sc1 = scatter!(ax, s_33/1e6, u_z, markersize = 8, color=:black, label=L"\text{Top Ranger } \max(u_3)")
-xlims!(ax, 0, 100)
+# 
+# Plot 2: (a) max(u_z) vs t, comparison with subsidence data
+#         (b) u_z top + faults view
+#
+data_u3max = [1947 1951 1954 1958 1965; -2.4 -4 -6.1 -7.9 -8.8]        # Kosloff et al., Tectonophysics (1980)
+f = Figure(size=(800, 400))
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max(u_3) \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=1935:5:1965, yticks =-10:2:0)
+sc1 = scatter!(ax, data_u3max[1, :], data_u3max[2, :], markersize=10, color=RGBAf(1,1,1,0), marker=:rect, strokewidth=1, strokecolor=:black, label=L"\text{ Field data}")
+ln1 = lines!(ax, t, u_z_top, color=:black, linewidth=1, label=L"\text{ Model}")
+xlims!(ax, 1936, 1970)
+ylims!(ax, -10, 0)
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
+save(join([figs_dir, "u3_surface.pdf"]), f, pt_per_unit = 1)
