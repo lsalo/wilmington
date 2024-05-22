@@ -149,19 +149,19 @@ xlims!(ax, 0, 3)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 
 ax = Axis(f[1, 2], xlabel = L"\text{Stress [MPa]}", xlabelsize = 16)
-sca1 = scatter!(ax, stress_data[1][:, 20], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0,0,0,1), strokewidth=0.5, label=L"S_1 \; (\text{FlatMaxwell})")
-sca2 = scatter!(ax, stress_data[1][:, 19], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.5,0.5,0.5,1), strokewidth=0.5, label=L"S_2")
-sca3 = scatter!(ax, stress_data[1][:, 18], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.8,0.8,0.8,1), strokewidth=0.5, label=L"S_3")
-lin1 = lines!(ax, predict(lm_s1, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0,0,0,1), linewidth = 1.5, label=L"P_4 \; (\text{model fit})")
-lin2 = lines!(ax, predict(lm_s2, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0.5,0.5,0.5,1), linewidth = 1.5, label=L"P_4")
-lin3 = lines!(ax, predict(lm_s3, (x=x_plot,)), x_plot, color = RGBAf(0.8,0.8,0.8,1), linewidth = 2, label=L"P_1")
+#sca1 = scatter!(ax, stress_data[1][:, 20], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0,0,0,1), strokewidth=0.5, label=L"S_1 \; (\text{FlatMaxwell})")
+#sca2 = scatter!(ax, stress_data[1][:, 19], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.5,0.5,0.5,1), strokewidth=0.5, label=L"S_2")
+#sca3 = scatter!(ax, stress_data[1][:, 18], stress_data[1][:, 3], markersize = 8, color=RGBAf(0,0,0,0), strokecolor=RGBAf(0.8,0.8,0.8,1), strokewidth=0.5, label=L"S_3")
+#lin1 = lines!(ax, predict(lm_s1, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0,0,0,1), linewidth = 1.5, label=L"P_4 \; (\text{model fit})")
+#lin2 = lines!(ax, predict(lm_s2, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0.5,0.5,0.5,1), linewidth = 1.5, label=L"P_4")
+#lin3 = lines!(ax, predict(lm_s3, (x=x_plot,)), x_plot, color = RGBAf(0.8,0.8,0.8,1), linewidth = 2, label=L"P_1")
 #lin4 = lines!(ax, predict(lm_sv, (x=x_plot,)), x_plot, color = RGBAf(0.8, 0.8, 0.8, 1.0), linewidth = 1) equal to s3
 lin4 = lines!(ax, s3_plot, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3")
 lin5 = lines!(ax, s2_plot, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{h} \text{ (crit. stress)}")
 lin6 = lines!(ax, s1_plot, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{H} \text{ (crit. stress)}")
 lin7 = lines!(ax, p_plot, z_plot*-1, color = :blue, linewidth = 1, linestyle = :solid, label=L"\rho_\text{w} g z")
 ylims!(ax, 15, 0)
-xlims!(ax, 0, -600)
+xlims!(ax, 0, -750)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) # rt = right-top
 f
 
