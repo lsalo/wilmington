@@ -39,7 +39,8 @@ figs_dir    = "C:/Users/lsalo/julia/graphics/figs/wilmington/2024-05-ERL/"
 # Get connectivity fron .inp grid: We need to get the *face* connectivity of node sets
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 #nsets_to_export = ["TopBC", "TopRangerSurface"]
-nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
+#nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
+nsets_to_export = ["Newport"]
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
@@ -54,15 +55,15 @@ end
 
 # 2. Element data (connectivity and displacements)
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-elsets_to_export = ["OverburdenPico"]
+elsets_to_export = ["Ranger"]
 _, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list_el = get_face_connectivity_elsets(elsets_to_export, elset_names_inp, elements_inp, "tetrahedral")
 
 nodal_disp_el = Vector{}(undef, length(elsets_to_export))
 for elset in eachindex(elsets_to_export)
     data = readdlm(join([dir_abaqus, elsets_to_export[elset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
-    nodal_disp_el[nset] = Matrix{Union{Int,Float64}}(data)
-    nodal_disp_el[nset][:, 1] .= Int.(nodal_disp_el[nset][:, 1])
+    nodal_disp_el[elset] = Matrix{Union{Int,Float64}}(data)
+    nodal_disp_el[elset][:, 1] .= Int.(nodal_disp_el[elset][:, 1])
 end
 
 for elset in eachindex(elsets_to_export)
@@ -87,5 +88,5 @@ end
 # Make plot
 labl = L"$u_z$ [m]"
 mycmap = cgrad(:lapaz)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1600, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.35*pi, plot_elev = 0.2*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "u_3", target_dpi=600, target_size_in=(16,12))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1*pi, plot_elev = 0.08*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "u_3_ranger_Newport", target_dpi=400, target_size_in=(15,12))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
