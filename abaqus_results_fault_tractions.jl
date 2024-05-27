@@ -16,20 +16,26 @@ using ColorSchemes
 using LaTeXStrings
 using DelimitedFiles
 using Statistics
+using LinearAlgebra
 
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
 #lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
 includet(joinpath(lib_dir, "modules", "faultOperations.jl"))
 using .FaultOperations
-includet(joinpath(lib_dir, "modules", "gridOperations.jl"))
-using .GridOperations
-includet(joinpath(lib_dir, "modules", "plotFromMRST.jl"))
-using .PlotFromMRST
+includet(joinpath(lib_dir, "modules", "abaqus.jl"))
+using .Abaqus
+includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
+using .ArrayOps
+includet(joinpath(lib_dir, "modules", "fileio.jl"))
+using .Fileio
+includet(joinpath(lib_dir, "modules", "makiePolyPlot.jl"))
+using .MakiePolyPlot
 
 # Directories
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
-dir_abaqus = "C:/Users/lsalo/abaqus/simulation_data/wilmington/output/elastic/extracted/S/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
+dir_abaqus = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/S/"
+dir_out = "C:/Users/lsalo/julia/output/wilmington/fault_quantities/plastic/"
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/2024-05-ERL/"
 #dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/grids/"
 #dir_abaqus = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/output/elastic/extracted/S/"
 #figs_dir = "/Users/lluis/Documents/julia/graphics/figs/wilmington/" 
@@ -39,19 +45,30 @@ fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 
 # Get nodeset faces - for now tetrahedra only
-nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c"]
+nsets_to_export = ["Wilmington"]
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
 # Face centroids and normals
 face_unit_normals, face_centroids = face_normals_and_centroids(face_list, nodes_inp)
 
 # Calculate shear, normal tractions at each node
-nodal_tractions = [zeros(Union{Int64, Float64}, 0, 3) for _ in 1:length(nsets_to_export)]
+mu = 0.6
+nodal_tractions = [Vector{Any}() for _ in 1:length(nsets_to_export)]
+dcff = Vector{Matrix{Union{Int64,Float64}}}(undef, length(nsets_to_export))
 for nset in eachindex(nsets_to_export)
-    tstep = "Geostatic"
-    nodal_stress = readdlm(join([dir_abaqus, nsets_to_export[nset], "/", tstep, ".dat"]), ',', Int64, '\n', skipstart=1)
-    fname = join([dir_abaqus, nsets_to_export[nset], "/tractions_", tstep, ".dat"])
-    nodal_tractions[nset] = tractions_from_sij_and_n(nodal_stress, nodes_inp, face_unit_normals[nset], face_centroids[nset], fname) 
+    abaqus_fn_nod = readdir(join([dir_abaqus, nsets_to_export[nset]]))
+    abaqus_fn_nod = sort(abaqus_fn_nod, by=sort_steps)
+    for (i, fn) in enumerate(abaqus_fn_nod)
+        nodal_stress = readdlm(join([dir_abaqus, nsets_to_export[nset], "/", fn]), ',', Int64, '\n', skipstart=1)
+        dir_path = joinpath([dir_out, nsets_to_export[nset]])
+        fname = join(["tractions_", fn])
+        push!(nodal_tractions[nset], tractions_from_sij_and_n(nodal_stress, nodes_inp, face_unit_normals[nset], face_centroids[nset], dir_path, fname))           
+
+        print(join([fn " completed.\n"]))
+    end
+    cff0 = nodal_tractions[nset][1][:, end] .+ mu*nodal_tractions[nset][1][:, 2]
+    cff = nodal_tractions[nset][end][:, end] .+ mu*nodal_tractions[nset][end][:, 2]
+    dcff[nset] = hcat(nodal_tractions[nset][1][:,1], cff .- cff0)
     
     print(join(["Fault tractions for nodeset ", nsets_to_export[nset], " completed.\n"]))
 end
@@ -66,23 +83,25 @@ coords_map[1] = nodes_inp[in.(nodes_inp[:, 1], Ref(unique_ids)), 2:end]
 
 # vals nodes
 vals_nodes = Vector{}(undef, 1)
-tmp = sortslices(vcat(nodal_tractions...), dims=1, by=x->x[1])
-nodal_tractions_plot = zeros(Float64, length(unique_ids), 2)
+tmp = sortslices(vcat(dcff...), dims=1, by=x->x[1])
+values_plot = zeros(Float64, length(unique_ids), 1)
 for (i, node) in enumerate(unique_ids) 
     id_rows = tmp[:,1] .== node
-    nodal_tractions_plot[i, :] = mean(tmp[id_rows, 2:end], dims=1)
+    values_plot[i, :] = mean(tmp[id_rows, 2:end], dims=1)
 end
-vals_nodes[1] = nodal_tractions_plot[:,1] ./ 1e6 # MPa
-labl = L"$\sigma_\text{n}^\prime$ [MPa]" # "$|\tau|$ [MPa]"
+vals_nodes[1] = values_plot[:,1] ./ 1e5         # MPa
+#labl = L"$\sigma_\text{n}^\prime$ [MPa]"       # "$|\tau|$ [MPa]"
+labl = L"\text{DCFF [bar]}"
 
 # face connectivity
 face_list_map = Vector{}(undef, 1)
 face_list_map[1], _ = renumber_array_1_to_n(vcat(face_list...))
 
 #mycmap = cgrad(:oleron)
-mycmap = cgrad(:lajolla)
+#mycmap = cgrad(:lajolla)
+mycmap = cgrad(:curl)
 fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (800, 600), plot_height = 700, cbar_height = 200, plot_azi = 1.8*pi, plot_elev = 0.3*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "t_n", target_dpi=350, target_size_in=(8,6))
-plotCellValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
+plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
 
 # test tractions
 #=
