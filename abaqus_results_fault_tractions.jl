@@ -45,7 +45,7 @@ fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 
 # Get nodeset faces - for now tetrahedra only
-nsets_to_export = ["Wilmington", "Newport", "PalosVerdes"]
+nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
 # Face centroids and normals
@@ -89,19 +89,19 @@ end
 # Averages for each fault
 n_steps = length(dcff[1])
 dcff_avg = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
-dcff_min = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
-dcff_max = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
+dcff_10 = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
+dcff_90 = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
 for nset in eachindex(nsets_to_export)
     for i in 1:n_steps
         dcff_avg[nset][i] = mean(dcff[nset][i][:, 2])
-        dcff_min[nset][i] = minimum(dcff[nset][i][:, 2])
-        dcff_max[nset][i] = maximum(dcff[nset][i][:, 2])
+        dcff_10[nset][i] = quantile(dcff[nset][i][:, 2], 0.1)
+        dcff_90[nset][i] = quantile(dcff[nset][i][:, 2], 0.9)
     end
 end
 
 
 # Plots
-# Plot average dcff on each fault vs t
+# 1. Plot average dcff on each fault vs t
 using CairoMakie
 CairoMakie.activate!()
 
@@ -113,33 +113,37 @@ f = Figure(size=(900, 350))
 ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\overline{\text{DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
 for (i, data) in enumerate(dcff_avg)
     normalized_i = i / length(nsets_to_export)
-    lbl = latexstring("\\text{" * nsets_to_export[i] * "}")
+    lbl = replace(nsets_to_export[i], "Tear_Fault_" => "TF")
+    lbl = latexstring("\\text{" * lbl * "}")
+    #lbl = latexstring("\\text{" * nsets_to_export[i] * "}")
     lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5, label=lbl)
 end
 xlims!(ax, 1936, 1960)
-ylims!(ax, -0.1, 0.2)
-axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+ylims!(ax, -10, 1)
+axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), nbanks=2) 
 
-ax = Axis(f[1, 2], ylabel = L"\min{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-for (i, data) in enumerate(dcff_min)
+#ax = Axis(f[1, 2], ylabel = L"\min{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+ax = Axis(f[1, 2], ylabel = L"\text{P}{10} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+for (i, data) in enumerate(dcff_10)
     normalized_i = i / length(nsets_to_export)
     lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
 end
 xlims!(ax, 1936, 1960)
-ylims!(ax, -3, 0.5)
+ylims!(ax, -25, 1)
 
-ax = Axis(f[1, 3], ylabel = L"\max{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-for (i, data) in enumerate(dcff_max)
+#ax = Axis(f[1, 3], ylabel = L"\max{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+ax = Axis(f[1, 3], ylabel = L"\text{P}{90} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+for (i, data) in enumerate(dcff_90)
     normalized_i = i / length(nsets_to_export)
     lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
 end
 xlims!(ax, 1936, 1960)
-ylims!(ax, -0.5, 4)
+ylims!(ax, -1, 3)
 f
-save(join([figs_dir, "dcff_vs_t_w_pv_ni.pdf"]), f, pt_per_unit = 1)
+save(join([figs_dir, "dcff_vs_t_TearFaults.pdf"]), f, pt_per_unit = 1)
 
 
-# Plot Map
+# 2. Plot Map
 # Better like this than using a loop: unique 1 to n numbering and plot without lines showing fault segment boundaries
 # we assume nodes_inp to be monotonically increasing
 using GLMakie
@@ -175,7 +179,7 @@ face_list_map[1], _ = renumber_array_1_to_n(vcat(face_list...))
 #mycmap = cgrad(:oleron)
 #mycmap = cgrad(:lajolla)
 mycmap = cgrad(:curl)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 700, cbar_height = 300, plot_azi = 0.85*pi, plot_elev = 0.05*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "Newport_dcff_1961", target_dpi=400, target_size_in=(12,9))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 700, cbar_height = 300, plot_azi = 0.2*pi, plot_elev = 0.25*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "TearFaults_dcff_1961_n_to_s", target_dpi=400, target_size_in=(12,9))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
 
 # test tractions

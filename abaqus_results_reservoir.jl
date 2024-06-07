@@ -168,11 +168,11 @@ save(join([figs_dir, "stres_path_reservoir.pdf"]), f, pt_per_unit = 1)
 #         (b) u_z top + faults view
 #
 data_u3max = [1947 1951 1954 1958 1965; -2.4 -4 -6.1 -7.9 -8.8]        # Kosloff et al., Tectonophysics (1980)
-f = Figure(size=(800, 400))
-ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max(u_3) \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=1935:5:1965, yticks =-10:2:0)
+f = Figure(size=(600, 300))
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1965, yticks =-10:2:0)
 sc1 = scatter!(ax, data_u3max[1, :], data_u3max[2, :], markersize=10, color=RGBAf(1,1,1,0), marker=:rect, strokewidth=1, strokecolor=:black, label=L"\text{ Field data}")
 ln1 = lines!(ax, t, u_z_top, color=:black, linewidth=1, label=L"\text{ Model}")
-xlims!(ax, 1936, 1970)
+xlims!(ax, 1935, 1963)
 ylims!(ax, -10, 0)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f

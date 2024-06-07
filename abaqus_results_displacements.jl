@@ -40,7 +40,7 @@ figs_dir    = "C:/Users/lsalo/julia/graphics/figs/wilmington/2024-05-ERL/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 #nsets_to_export = ["TopBC", "TopRangerSurface"]
 #nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
-nsets_to_export = ["Newport"]
+nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
@@ -88,5 +88,5 @@ end
 # Make plot
 labl = L"$u_z$ [m]"
 mycmap = cgrad(:lapaz)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1*pi, plot_elev = 0.08*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = false, save_dir = figs_dir, title = "u_3_ranger_Newport", target_dpi=400, target_size_in=(15,12))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.3*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "u_3_ranger_TearFaults", target_dpi=400, target_size_in=(15,12))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
