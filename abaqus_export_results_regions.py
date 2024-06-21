@@ -118,19 +118,21 @@ def main_fun(odb, fieldNameToOutput, regionType, regName, stepNameUser, dir_odb)
 
 
 # Paths
-dir_odb = "../../wilmington_old/output/plastic/"
-fileNameToRead=dir_odb + "wilmington_plastic.odb"
+#dir_odb = "wilmington_old/output/plastic/"
+dir_odb = "wilmington/plastic-1/"
+fileNameToRead=dir_odb + "wilmington_plastic-1.odb"
 print("\n \t Reading file "+fileNameToRead+"\n ")
 
 # Inputs
 regionType = "nodeset"                                      # elementset or nodeset
-field_to_extract = "stress"                                 # displacement or stress
-stepNameUser=[0] + list(range(12, 301, 12))                 # "All" or "Geostatic" or list of numbers with tsteps
+field_to_extract = "displacement"                                 # displacement or stress
+stepNameUser=[0] + list(range(12, 469, 12))                 # "All" or "Geostatic" or list of numbers with tsteps
 partName="Part_1"                                           #
 if regionType == 'nodeset':
     if field_to_extract == "displacement":
         fieldNameToOutput = "U"    
-        regionNames=["TOPRANGERSURFACE", "TOPBC"]   
+        regionNames=["TOPBC", "TOPRANGERSURFACE"]  
+        #regionNames=["COMPTONLOSALAMITOS_A", "COMPTONLOSALAMITOS_B", "COMPTONLOSALAMITOS_C", "NEWPORT", "PALOSVERDES", "TEAR_FAULT_2", "TEAR_FAULT_4", "TEAR_FAULT_5", "TEAR_FAULT_6", "TEAR_FAULT_8A", "TEAR_FAULT_8B", "TEAR_FAULT_9", "TEAR_FAULT_10A", "TEAR_FAULT_10B", "TEAR_FAULT_11", "TEAR_FAULT_13A", "TEAR_FAULT_13B", "TEAR_FAULT_15", "TEAR_FAULT_19", "TEAR_FAULT_21A", "TEAR_FAULT_21B", "TEAR_FAULT_26", "TEAR_FAULT_27", "WILMINGTON"]  
     elif field_to_extract == "stress":
         fieldNameToOutput = "S"    
         regionNames=["COMPTONLOSALAMITOS_A", "COMPTONLOSALAMITOS_B", "COMPTONLOSALAMITOS_C", "NEWPORT", "PALOSVERDES", "TEAR_FAULT_2", "TEAR_FAULT_4", "TEAR_FAULT_5", "TEAR_FAULT_6", "TEAR_FAULT_8A", "TEAR_FAULT_8B", "TEAR_FAULT_9", "TEAR_FAULT_10A", "TEAR_FAULT_10B", "TEAR_FAULT_11", "TEAR_FAULT_13A", "TEAR_FAULT_13B", "TEAR_FAULT_15", "TEAR_FAULT_19", "TEAR_FAULT_21A", "TEAR_FAULT_21B", "TEAR_FAULT_26", "TEAR_FAULT_27", "WILMINGTON"] 
