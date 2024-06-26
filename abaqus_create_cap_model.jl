@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "ranger"  # entire_domain | ranger | ranger-pico
+cap_case = "above-basement"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico
 
 
 # Read initial stress data and convert to cap stress space
@@ -35,6 +35,14 @@ elseif cap_case == "ranger-pico"
     id_rp = vec(readdlm(join([dir_in, "id_ranger_pico.dat"]), Int))         # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
     stress_ini = stress_ini[id_rp, 2:end]/1e6   # MPa
     depth_elems = centroids[id_rp, end]
+elseif cap_case == "ranger-pico-overPico"
+    id_rpo = vec(readdlm(join([dir_in, "id_ranger_pico_overPico.dat"]), Int))  # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
+    stress_ini = stress_ini[id_rpo, 2:end]/1e6   # MPa
+    depth_elems = centroids[id_rpo, end]
+elseif cap_case == "above-basement"
+    id_ab = vec(readdlm(join([dir_in, "id_all_above_basement.dat"]), Int))  # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
+    stress_ini = stress_ini[id_ab, 2:end]/1e6   # MPa
+    depth_elems = centroids[id_ab, end]
 end
 p_ini = vec(-(1/3)*sum(stress_ini[:,1:3], dims=2))
 q_ini = sqrt.( 0.5*((stress_ini[:,1] - stress_ini[:,2]).^2 .+ (stress_ini[:,2] - stress_ini[:,3]).^2 .+ (stress_ini[:,3] - stress_ini[:,1]).^2) ) # ok for shear stress = 0
@@ -62,6 +70,14 @@ elseif cap_case == "ranger-pico"
     z_pt = -[400, 405, 890, 900, 1420, 1430, 2890, 3000]
     e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
     fn_hardening = "hardening_curve_peff_0.125Kosloff_ranger-pico.inp"
+elseif cap_case == "ranger-pico-overPico"
+    z_pt = -[0, 1, 400, 405, 890, 900, 1420, 1430, 2890, 3000]
+    e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
+    fn_hardening = "hardening_curve_peff_0.25Kosloff_ranger-pico-overPico.inp"
+elseif cap_case == "above-basement"
+    z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
+    e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
+    fn_hardening = "hardening_curve_peff_0.25Kosloff_above_basement.inp"
 end
 nc = Int(length(z_pt)/2)
 p_b = Vector{}(undef, nc)
