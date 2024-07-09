@@ -17,7 +17,7 @@ dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 # Write timestep info
 fileNames=readdir(dir_p_abq)
 dirName = "nodal_dp_1936_to_1975"
-fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic.inp"
+fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
 p_variable_num = 2
 tstep_conv = 300
 inc = 1000
@@ -43,7 +43,7 @@ open(fileNameToSave, "w") do f
         elseif i < length(fileNames)
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 900
-            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=yes
+            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -55,7 +55,7 @@ open(fileNameToSave, "w") do f
         else
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 900
-            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=yes
+            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
