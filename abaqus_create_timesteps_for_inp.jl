@@ -20,7 +20,6 @@ dirName = "nodal_dp_1936_to_1975"
 fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
 p_variable_num = 2
 tstep_conv = 300
-inc = 1000
 open(fileNameToSave, "w") do f
     str = ""
     tstep_size_s = 2629746  # from mrst: year/12
@@ -30,9 +29,10 @@ open(fileNameToSave, "w") do f
 
         # Note: triple quotes for multiline strings, otherwise it will be interpreted as character
         if i <= tstep_conv
+            inc = 500
             t_inc_ini_s = 3600*24*5 # 5 days
-            t_inc_min_s = 8640
-            str = """*step, name=step_$stepNumber
+            t_inc_min_s = 300
+            str = """*step, name=step_$stepNumber, inc=$inc
             *STATIC
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -41,8 +41,9 @@ open(fileNameToSave, "w") do f
             **
             """
         elseif i < length(fileNames)
+            inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
-            t_inc_min_s = 900
+            t_inc_min_s = 300
             str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
@@ -53,8 +54,9 @@ open(fileNameToSave, "w") do f
             **
             """
         else
+            inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
-            t_inc_min_s = 900
+            t_inc_min_s = 300
             str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s

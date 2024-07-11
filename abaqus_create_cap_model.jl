@@ -108,22 +108,24 @@ elseif model_name == "cam-clay"
     # hardening parameter (a0)
     if cap_case == "ranger"
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
-        fn_camclay = "clay_plasticity_peff_1.4.inp"
+        fn_camclay = "clay_plasticity_pc_1.4peff.inp"
     end
 
     nc = Int(length(z_pt)/2)
     p_c = Vector{}(undef, nc)       # yield stress in hydrostatic compression
+    a0 = Vector{}(undef, nc) 
     peff_id = Vector{}(undef, nc)
     for i in 1:nc
         id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
         peff_id[i] = peff_ini_nod[id, end]
         p_c[i] = 1.4*peff_id[i]    # Pa
+        a0[i] = p_c[i]/(1+b)
     end
 
     # write to file
-    p_c_str = map(x -> @sprintf("%.2f", x), p_c)
+    a0_str = map(x -> @sprintf("%.2f", x), a0)
     peff_id_str = map(x -> @sprintf("%.2f", x), peff_id)
-    to_save = hcat( fill(l, nc), fill(M, nc), p_c_str, fill(b, nc), fill(K, nc), zeros(nc, 1), peff_id_str)
+    to_save = hcat( fill(l, nc), fill(M, nc), a0_str, fill(b, nc), fill(K, nc), zeros(nc, 1), peff_id_str)
     writedlm(join([dir_in, fn_camclay]), to_save, ",\t")
 end
 
