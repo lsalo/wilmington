@@ -182,13 +182,16 @@ save(join([figs_dir, "stres_path_ranger_uzmin.pdf"]), f, pt_per_unit = 1)
 # 
 # Plot 2: max(u_z) vs t, comparison with subsidence data
 #
-data_u3max = [1947 1951 1954 1958 1965; -2.4 -4 -6.1 -7.9 -8.8]        # Kosloff et al., Tectonophysics (1980)
-f = Figure(size=(600, 300))
-ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1965, yticks =-10:2:0)
+#data_u3max = [1947 1951 1954 1958 1965; -2.4 -4 -6.1 -7.9 -8.8]        # Kosloff et al., Tectonophysics (1980)
+data_u3max = [1975; 0.45]  
+f = Figure(size=(400, 300))
+#ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1965, yticks =-10:2:0)
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1975, yticks =0:2:10)
 sc1 = scatter!(ax, data_u3max[1, :], data_u3max[2, :], markersize=10, color=RGBAf(1,1,1,0), marker=:rect, strokewidth=1, strokecolor=:black, label=L"\text{ Field data}")
 ln1 = lines!(ax, t, u_z_top, color=:black, linewidth=1, label=L"\text{ Model}")
-xlims!(ax, 1935, 1963)
-ylims!(ax, -10, 0)
+xlims!(ax, 1935, 1977)
+#ylims!(ax, -10, 0)
+ylims!(ax, 0, 10)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
 save(join([figs_dir, "u3_surface.pdf"]), f, pt_per_unit = 1)

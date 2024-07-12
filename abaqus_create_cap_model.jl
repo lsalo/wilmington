@@ -101,14 +101,14 @@ elseif model_name == "cam-clay"
     l = 0.1
     phi = 32 # friction angle
     M = round(6*sind(phi)/(3 - sind(phi)), digits=2)
-    b = 0.5
+    b = 1.0
     K = 1.0
     p_t = 0 # no cohesion, must be 0 for exponential hardening as defined here
 
     # hardening parameter (a0)
     if cap_case == "ranger"
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
-        fn_camclay = "clay_plasticity_pc_1.4peff.inp"
+        fn_camclay = "clay_plasticity_pc1.85peff_b1.inp"
     end
 
     nc = Int(length(z_pt)/2)
@@ -118,7 +118,7 @@ elseif model_name == "cam-clay"
     for i in 1:nc
         id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
         peff_id[i] = peff_ini_nod[id, end]
-        p_c[i] = 1.4*peff_id[i]    # Pa
+        p_c[i] = 1.85*peff_id[i]    # Pa
         a0[i] = p_c[i]/(1+b)
     end
 
@@ -170,10 +170,13 @@ if model_name == "mdpcm"
 
 elseif model_name == "cam-clay"
     if cap_case == "ranger" || cap_case == "ranger-pico"
-        p_Fs = Vector{}(0:10:100)
+        p_Fs = Vector{}(0:10:125)
         #q_Fc = vcat(Vector{}(0:1:25), Vector{}(25.1:.1:25.2))
         #q_Fc = vcat(Vector{}(0:1:76), Vector{}(76.1:.1:76.1))
-        q_Fc = vcat(Vector{}(0:1:78), Vector{}(78.1:.1:78.6))
+        #q_Fc = vcat(Vector{}(0:1:78), Vector{}(78.1:.1:78.6))
+        
+        q_Fc = vcat(Vector{}(0:1:77), Vector{}(77.1:.1:77.9))
+        #q_Fc = vcat(Vector{}(0:1:23), Vector{}(23.1:.1:23.8))
     end
 
     q_Fs = M*p_t .+ M.*p_Fs
@@ -187,8 +190,8 @@ elseif model_name == "cam-clay"
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
     #text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
     if cap_case == "ranger" || cap_case == "ranger-pico"
-        xlims!(ax, 0, 100)
-        ylims!(ax, 0, 100)
+        xlims!(ax, 0, 125)
+        ylims!(ax, 0, 125)
     end
     axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
     f

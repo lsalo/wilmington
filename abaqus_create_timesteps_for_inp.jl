@@ -29,22 +29,23 @@ open(fileNameToSave, "w") do f
 
         # Note: triple quotes for multiline strings, otherwise it will be interpreted as character
         if i <= tstep_conv
-            inc = 500
+            inc = 1000
             t_inc_ini_s = 3600*24*5 # 5 days
-            t_inc_min_s = 300
+            t_inc_min_s = 0
             str = """*step, name=step_$stepNumber, inc=$inc
-            *STATIC
+            *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
             *Include, input=../$dirName/$fileName
+            *Controls, analysis=discontinuous
             *end step
             **
             """
         elseif i < length(fileNames)
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
-            t_inc_min_s = 300
-            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
+            t_inc_min_s = 0
+            str = """*step, name=step_$stepNumber, inc=$inc
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -56,8 +57,8 @@ open(fileNameToSave, "w") do f
         else
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
-            t_inc_min_s = 300
-            str = """*step, name=step_$stepNumber, inc=$inc, nlgeom=no, unsymm=no
+            t_inc_min_s = 0
+            str = """*step, name=step_$stepNumber, inc=$inc
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
