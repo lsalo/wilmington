@@ -17,8 +17,8 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "ranger"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico
-model_name = "cam-clay"   # mdpcm | cam-clay (isotropic, K=1)
+cap_case = "overPico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
+model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
 # Read initial stress data and convert to cap stress space
@@ -44,6 +44,14 @@ elseif cap_case == "above-basement"
     id_ab = vec(readdlm(join([dir_in, "id_all_above_basement.dat"]), Int))  # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
     stress_ini = stress_ini[id_ab, 2:end]/1e6   # MPa
     depth_elems = centroids[id_ab, end]
+elseif cap_case == "pico"
+    id_p = vec(readdlm(join([dir_in, "id_pico.dat"]), Int))  
+    stress_ini = stress_ini[id_p, 2:end]/1e6   # MPa
+    depth_elems = centroids[id_p, end]
+elseif cap_case == "overPico"
+    id_p = vec(readdlm(join([dir_in, "id_overPico.dat"]), Int))  
+    stress_ini = stress_ini[id_p, 2:end]/1e6   # MPa
+    depth_elems = centroids[id_p, end]
 end
 p_ini = vec(-(1/3)*sum(stress_ini[:,1:3], dims=2))
 q_ini = sqrt.( 0.5*((stress_ini[:,1] - stress_ini[:,2]).^2 .+ (stress_ini[:,2] - stress_ini[:,3]).^2 .+ (stress_ini[:,3] - stress_ini[:,1]).^2) ) # ok for shear stress = 0
@@ -61,33 +69,57 @@ if model_name == "mdpcm"
     # Hardening curve
     # We define hydrostatic yield (p_b) as 118% of the initial p_eff
     if cap_case == "ranger"
+        #z_pt = -[930, 940, 1420, 1430, 2890, 3000]
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
-        e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
-        fn_hardening = "hardening_curve_peff_0.1Kosloff_1.15.inp"
+        #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
+        e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+        f_p = 1.19
+        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_ranger.inp"
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
+        f_p = 1.18
         fn_hardening = "hardening_curve_peff_all.inp"
     elseif cap_case == "ranger-pico"
         z_pt = -[400, 405, 890, 900, 1420, 1430, 2890, 3000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        fn_hardening = "hardening_curve_peff_0.1Kosloff_1.15_ranger-pico.inp"
+        f_p = 1.18
+        fn_hardening = "hardening_curve_peff_0.25Kosloff_1.18_ranger-pico.inp"
     elseif cap_case == "ranger-pico-overPico"
         z_pt = -[0, 1, 400, 405, 890, 900, 1420, 1430, 2890, 3000]
-        e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
-        fn_hardening = "hardening_curve_peff_0.25Kosloff_ranger-pico-overPico.inp"
+        e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+        f_p = 1.15
+        fn_hardening = "hardening_curve_1.15peff_0.25Kosloff_ranger-pico-overPico.inp"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
+        f_p = 1.18
         fn_hardening = "hardening_curve_peff_0.25Kosloff_above_basement.inp"
+    elseif cap_case == "pico"
+        #z_pt = -[475, 485, 950, 1000, 2620, 2650]
+        z_pt = -[450, 460, 950, 1000, 2620, 2650]
+        e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+        f_p = 1.19
+        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_pico.inp"
+    elseif cap_case == "overPico"
+        z_pt = -[0, 1, 475, 485, 1360, 1370]
+        #z_pt = -[25, 30, 475, 485, 1360, 1370]
+        e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+        f_p = 1.19
+        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_overPico.inp"
     end
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
     peff_id = Vector{}(undef, nc)
+    f_K = 0.25
     for i in 1:nc
         id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
-        peff_id[i] = peff_ini_nod[id, end]
-        p_b[i] = 1.15*peff_id[i] .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
+        if isnothing(id)
+            peff_id[i] = 0.5*minimum(peff_ini_nod[peff_ini_nod[:, end].>0, end])
+        else
+            peff_id[i] = peff_ini_nod[id, end]
+        end
+        p_b[i] = f_p*peff_id[i] .+ f_K*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # Pa
     end
 
     # write to file
@@ -137,12 +169,21 @@ if model_name == "mdpcm"
     if cap_case == "ranger" || cap_case == "ranger-pico"
         p_Fs = Vector{}(0:10:100)
         q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))
+        #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))
     elseif cap_case == "entire_domain"
         p_Fs = Vector{}(0:10:400)
         q_Fc = vcat(Vector{}(0:10:400), Vector{}(400:1:407))
+    elseif cap_case == "pico"
+        p_Fs = Vector{}(0:10:100)
+        q_Fc = vcat(Vector{}(0:1:71), Vector{}(71.1:.1:71.2))
+        #q_Fc = vcat(Vector{}(0:1:15), Vector{}(15.1:.1:15.5))
+    elseif cap_case == "overPico"
+        p_Fs = Vector{}(0:10:100)
+        #q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
+        q_Fc = vcat(Vector{}(0:.1:1), Vector{}(1.01:.01:1.1))
     end
     q_Fs = p_Fs.*tand(b) .+ d
-    p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
+    p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
@@ -157,6 +198,12 @@ if model_name == "mdpcm"
     elseif cap_case == "entire_domain"
         xlims!(ax, 0, 400)
         ylims!(ax, 0, 450)
+    elseif cap_case == "pico"
+        xlims!(ax, 0, 75)
+        ylims!(ax, 0, 75)
+    elseif cap_case == "overPico"
+        xlims!(ax, 0, 5)
+        ylims!(ax, 0, 5)
     end
     axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 

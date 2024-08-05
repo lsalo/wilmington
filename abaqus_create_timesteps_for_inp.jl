@@ -17,7 +17,8 @@ dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 # Write timestep info
 fileNames=readdir(dir_p_abq)
 dirName = "nodal_dp_1936_to_1975"
-fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
+fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_mdpcm_conv.inp"
+#fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
 p_variable_num = 2
 tstep_conv = 300
 open(fileNameToSave, "w") do f
@@ -32,7 +33,7 @@ open(fileNameToSave, "w") do f
             inc = 1000
             t_inc_ini_s = 3600*24*5 # 5 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc
+            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -45,7 +46,7 @@ open(fileNameToSave, "w") do f
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc
+            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -58,7 +59,7 @@ open(fileNameToSave, "w") do f
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc
+            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
