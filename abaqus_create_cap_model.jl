@@ -17,8 +17,8 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "ranger"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
-model_name = "cam-clay"   # mdpcm | cam-clay (isotropic, K=1)
+cap_case = "overPico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
+model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
 # Read initial stress data and convert to cap stress space
@@ -74,44 +74,50 @@ if model_name == "mdpcm"
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_ranger.inp"
+        f_K = 0.5
+        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_ranger.inp"
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
         f_p = 1.18
+        f_K = 0.25
         fn_hardening = "hardening_curve_peff_all.inp"
     elseif cap_case == "ranger-pico"
         z_pt = -[400, 405, 890, 900, 1420, 1430, 2890, 3000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.18
+        f_K = 0.25
         fn_hardening = "hardening_curve_peff_0.25Kosloff_1.18_ranger-pico.inp"
     elseif cap_case == "ranger-pico-overPico"
         z_pt = -[0, 1, 400, 405, 890, 900, 1420, 1430, 2890, 3000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.15
+        f_K = 0.25
         fn_hardening = "hardening_curve_1.15peff_0.25Kosloff_ranger-pico-overPico.inp"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
         f_p = 1.18
+        f_K = 0.25
         fn_hardening = "hardening_curve_peff_0.25Kosloff_above_basement.inp"
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_pico.inp"
+        f_K = 0.5
+        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_pico.inp"
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        fn_hardening = "hardening_curve_1.19peff_0.25Kosloff_overPico.inp"
+        f_K = 0.5
+        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_overPico.inp"
     end
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
     peff_id = Vector{}(undef, nc)
-    f_K = 0.25
     for i in 1:nc
         id = findfirst(x -> z_pt[2*i] <= x <= z_pt[2*i-1], nodal_depth[:, 2])
         if isnothing(id)
@@ -184,11 +190,11 @@ if model_name == "mdpcm"
         q_Fc = vcat(Vector{}(0:.1:1), Vector{}(1.01:.01:1.1))
     end
     q_Fs = p_Fs.*tand(b) .+ d
-    p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
+    p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
-    ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
+    ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:25:100, yticks=0:25:100)
     ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 2, label=L"F_\text{s}")
     ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.5, linestyle = :solid, label=L"F_\text{c}")
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
@@ -226,8 +232,8 @@ elseif model_name == "cam-clay"
         #q_Fc = vcat(Vector{}(0:1:77), Vector{}(77.1:.1:77.9))
         #q_Fc = vcat(Vector{}(0:1:23), Vector{}(23.1:.1:23.8))
 
-        # b=0.3, pc = 1.19peff:
-        q_Fc = vcat(Vector{}(0:1:76), Vector{}(76.1:.1:76.9))
+        # b=0.25, pc = 1.19peff:
+        q_Fc = vcat(Vector{}(0:1:80), Vector{}(80.1:.1:80.2))
         #q_Fc = vcat(Vector{}(0:1:25), Vector{}(25.1:.1:25.5))
     end
 
