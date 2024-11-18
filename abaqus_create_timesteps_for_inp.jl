@@ -11,13 +11,13 @@ using Revise
 println("Finished loading packages")
 
 # Filename and Directories
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_1975/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fTvariable3_Inj0.8/result_data/dp_for_abaqus_1936_1975/"
 dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 
 # Write timestep info
 fileNames=readdir(dir_p_abq)
-dirName = "nodal_dp_1936_to_1975"
-fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_mdpcm_conv.inp"
+dirName = "nodal_dp_1936_to_1975_PVM1000_fTvar3_injMult0.8"
+fileNameToSave=dir_out*"tsteps_1936_to_1975_PVM1000_fTvar3_injMult0.8_plastic_mdpcm_conv.inp"
 #fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
 p_variable_num = 2
 tstep_conv = 300

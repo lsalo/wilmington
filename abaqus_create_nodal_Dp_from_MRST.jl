@@ -30,11 +30,11 @@ dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
 fn_G    = "wilmington_ranger_G_withGeometry.mat"
-dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/1936_1975/"
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_1975/"
+dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fTvariable3_Inj0.8/result_data/1936_1975/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fTvariable3_Inj0.8/result_data/dp_for_abaqus_1936_1975/"
 fn_p    = "states_p_Pa.mat"
 fn_t    = "states_t_s.mat"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fTvariable3_Inj0.8/"  
 
 # Connectivity from .inp file (Abaqus grid)
 nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
@@ -91,7 +91,7 @@ nodal_dp_inp_plot[:,2:end] = nodal_dp_inp[:,2:end]
 nodal_dp_inp_plot = sortslices(nodal_dp_inp_plot, dims=1)  
 
 # put variables in vector containers
-t_id = 309
+t_id = 468
 coords_map = Vector{}(undef, 1)
 cells_nodes_map_plot = Vector{}(undef, 1)
 cells_values_nodes = Vector{}(undef, 1)
@@ -102,6 +102,6 @@ cells_values_nodes[1] = nodal_dp_inp_plot[:,t_id]./1e5
 # plot
 mycmap=cgrad(:curl)
 
-fig_descriptor = (cmap=mycmap, cbar_label=L"$\Delta p$ [bar]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.57*pi, plot_elev = 0.47*pi, plot_linew=0.1, xlms=(378449, 400339), ylms=(3.728e6, 3.752e6), save_fig = true, save_dir = figs_dir, title = "dp_reservoir_1961", target_dpi=350, target_size_in=(8,6))
+fig_descriptor = (cmap=mycmap, cbar_label=L"$\Delta p$ [bar]", fig_size = (800, 600), plot_height = 900, cbar_height = 200, plot_azi = 1.57*pi, plot_elev = 0.47*pi, plot_linew=0.1, xlms=(378449, 400339), ylms=(3.728e6, 3.752e6), save_fig = false, save_dir = figs_dir, title = "dp_reservoir_1961", target_dpi=350, target_size_in=(8,6))
 
 plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, fig_descriptor)

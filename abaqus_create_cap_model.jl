@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "overPico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
+cap_case = "pico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
@@ -74,8 +74,8 @@ if model_name == "mdpcm"
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        f_K = 0.5
-        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_ranger.inp"
+        f_K = 0.05
+        fn_hardening = "hardening_curve_1.19peff_0.05Kosloff_ranger.inp"
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
@@ -105,15 +105,15 @@ if model_name == "mdpcm"
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        f_K = 0.5
-        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_pico.inp"
+        f_K = 0.02
+        fn_hardening = "hardening_curve_1.19peff_0.02Kosloff_pico.inp"
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.19
-        f_K = 0.5
-        fn_hardening = "hardening_curve_1.19peff_0.5Kosloff_overPico.inp"
+        f_K = 0.05
+        fn_hardening = "hardening_curve_1.19peff_0.05Kosloff_overPico.inp"
     end
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
