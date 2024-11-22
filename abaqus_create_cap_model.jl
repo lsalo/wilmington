@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "pico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
+cap_case = "overPico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
@@ -73,9 +73,9 @@ if model_name == "mdpcm"
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.19
-        f_K = 0.05
-        fn_hardening = "hardening_curve_1.19peff_0.05Kosloff_ranger.inp"
+        f_p = 1.15
+        f_K = 0.1
+        fn_hardening = "hardening_curve_1.15peff_0.1Kosloff_ranger.inp"
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
@@ -104,16 +104,16 @@ if model_name == "mdpcm"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.19
-        f_K = 0.02
-        fn_hardening = "hardening_curve_1.19peff_0.02Kosloff_pico.inp"
+        f_p = 1.15
+        f_K = 0.1
+        fn_hardening = "hardening_curve_1.15peff_0.1Kosloff_pico.inp"
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.19
-        f_K = 0.05
-        fn_hardening = "hardening_curve_1.19peff_0.05Kosloff_overPico.inp"
+        f_p = 1.16
+        f_K = 0.1
+        fn_hardening = "hardening_curve_1.16peff_0.1Kosloff_overPico.inp"
     end
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
@@ -186,8 +186,8 @@ if model_name == "mdpcm"
         #q_Fc = vcat(Vector{}(0:1:15), Vector{}(15.1:.1:15.5))
     elseif cap_case == "overPico"
         p_Fs = Vector{}(0:10:100)
-        #q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
-        q_Fc = vcat(Vector{}(0:.1:1), Vector{}(1.01:.01:1.1))
+        q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
+        #q_Fc = vcat(Vector{}(0:.1:1), Vector{}(1.01:.01:1.1))
     end
     q_Fs = p_Fs.*tand(b) .+ d
     p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
@@ -209,8 +209,8 @@ if model_name == "mdpcm"
         xlims!(ax, 0, 75)
         ylims!(ax, 0, 75)
     elseif cap_case == "overPico"
-        xlims!(ax, 0, 5)
-        ylims!(ax, 0, 5)
+        xlims!(ax, 0, 40)
+        ylims!(ax, 0, 40)
     end
     axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 
