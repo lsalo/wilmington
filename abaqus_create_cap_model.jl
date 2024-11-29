@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "overPico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico
+cap_case = "bottomRanger"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
@@ -27,32 +27,24 @@ nodal_depth     = readdlm(join([dir_in, "nodal_depth.dat"]), ',')
 peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
 stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
 if cap_case == "ranger"
-    id_ranger = 1:67736     # elements of Ranger elementset, grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
-    stress_ini = stress_ini[id_ranger, 2:end]/1e6   # MPa
-    depth_ranger_elems = centroids[id_ranger, end]
+    id_cells = 1:67736     # elements of Ranger elementset, grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
 elseif cap_case == "entire_domain"
-    stress_ini = stress_ini[:, 2:end]/1e6           # MPa
+    id_cells = 1:length(centroids[:, 1])
 elseif cap_case == "ranger-pico"
-    id_rp = vec(readdlm(join([dir_in, "id_ranger_pico.dat"]), Int))         # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
-    stress_ini = stress_ini[id_rp, 2:end]/1e6   # MPa
-    depth_elems = centroids[id_rp, end]
+    id_cells = vec(readdlm(join([dir_in, "id_ranger_pico.dat"]), Int))              
 elseif cap_case == "ranger-pico-overPico"
-    id_rpo = vec(readdlm(join([dir_in, "id_ranger_pico_overPico.dat"]), Int))  # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
-    stress_ini = stress_ini[id_rpo, 2:end]/1e6   # MPa
-    depth_elems = centroids[id_rpo, end]
+    id_cells = vec(readdlm(join([dir_in, "id_ranger_pico_overPico.dat"]), Int))    
 elseif cap_case == "above-basement"
-    id_ab = vec(readdlm(join([dir_in, "id_all_above_basement.dat"]), Int))  # grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
-    stress_ini = stress_ini[id_ab, 2:end]/1e6   # MPa
-    depth_elems = centroids[id_ab, end]
+    id_cells = vec(readdlm(join([dir_in, "id_all_above_basement.dat"]), Int))       
 elseif cap_case == "pico"
-    id_p = vec(readdlm(join([dir_in, "id_pico.dat"]), Int))  
-    stress_ini = stress_ini[id_p, 2:end]/1e6   # MPa
-    depth_elems = centroids[id_p, end]
+    id_cells = vec(readdlm(join([dir_in, "id_pico.dat"]), Int))  
 elseif cap_case == "overPico"
-    id_p = vec(readdlm(join([dir_in, "id_overPico.dat"]), Int))  
-    stress_ini = stress_ini[id_p, 2:end]/1e6   # MPa
-    depth_elems = centroids[id_p, end]
+    id_cells = vec(readdlm(join([dir_in, "id_overPico.dat"]), Int))  
+elseif cap_case == "bottomRanger"
+    id_cells = vec(readdlm(join([dir_in, "id_bottomRanger.dat"]), Int))  
 end
+stress_ini = stress_ini[id_cells, 2:end]/1e6   # MPa
+depth_elems = centroids[id_cells, end]
 p_ini = vec(-(1/3)*sum(stress_ini[:,1:3], dims=2))
 q_ini = sqrt.( 0.5*((stress_ini[:,1] - stress_ini[:,2]).^2 .+ (stress_ini[:,2] - stress_ini[:,3]).^2 .+ (stress_ini[:,3] - stress_ini[:,1]).^2) ) # ok for shear stress = 0
 
@@ -73,48 +65,48 @@ if model_name == "mdpcm"
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.15
+        f_p = 1.17
         f_K = 0.1
-        fn_hardening = "hardening_curve_1.15peff_0.1Kosloff_ranger.inp"
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
         f_p = 1.18
         f_K = 0.25
-        fn_hardening = "hardening_curve_peff_all.inp"
     elseif cap_case == "ranger-pico"
         z_pt = -[400, 405, 890, 900, 1420, 1430, 2890, 3000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.18
         f_K = 0.25
-        fn_hardening = "hardening_curve_peff_0.25Kosloff_1.18_ranger-pico.inp"
     elseif cap_case == "ranger-pico-overPico"
         z_pt = -[0, 1, 400, 405, 890, 900, 1420, 1430, 2890, 3000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
         f_p = 1.15
         f_K = 0.25
-        fn_hardening = "hardening_curve_1.15peff_0.25Kosloff_ranger-pico-overPico.inp"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2]
         f_p = 1.18
         f_K = 0.25
-        fn_hardening = "hardening_curve_peff_0.25Kosloff_above_basement.inp"
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.15
+        f_p = 1.17
         f_K = 0.1
-        fn_hardening = "hardening_curve_1.15peff_0.1Kosloff_pico.inp"
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.16
+        f_p = 1.17
         f_K = 0.1
-        fn_hardening = "hardening_curve_1.16peff_0.1Kosloff_overPico.inp"
+    elseif cap_case == "bottomRanger"
+        z_pt = -[1160, 1170, 1990, 2000, 4790, 5000]
+        #z_pt = -[25, 30, 475, 485, 1360, 1370]
+        e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+        f_p = 1.18
+        f_K = 0.1
     end
+    fn_hardening = "hardening_curve_" * string(f_p) * "peff_" * string(f_K) * "Kosloff_" * cap_case * ".inp"
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
     peff_id = Vector{}(undef, nc)
@@ -188,13 +180,19 @@ if model_name == "mdpcm"
         p_Fs = Vector{}(0:10:100)
         q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
         #q_Fc = vcat(Vector{}(0:.1:1), Vector{}(1.01:.01:1.1))
+    elseif cap_case == "bottomRanger"
+        p_Fs = Vector{}(0:10:150)
+        q_Fc = vcat(Vector{}(0:1:129), Vector{}(129.1:.1:129.5))
+        #q_Fc = vcat(Vector{}(0:1:31), Vector{}(31.1:.1:31.3))
     end
     q_Fs = p_Fs.*tand(b) .+ d
     p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
+    #p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
-    ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:25:100, yticks=0:25:100)
+    #ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:25:125, yticks=0:25:125)
+    ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
     ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 2, label=L"F_\text{s}")
     ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.5, linestyle = :solid, label=L"F_\text{c}")
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
@@ -211,6 +209,11 @@ if model_name == "mdpcm"
     elseif cap_case == "overPico"
         xlims!(ax, 0, 40)
         ylims!(ax, 0, 40)
+    elseif cap_case == "bottomRanger"
+        xlims!(ax, 100, 115)
+        ylims!(ax, 120, 135)
+        #xlims!(ax, 25, 30)
+        #ylims!(ax, 30, 35)
     end
     axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 
@@ -219,7 +222,7 @@ if model_name == "mdpcm"
     ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
     ln1 = lines!(ax, e_p, p_b[3]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
     xlims!(ax, 0, 0.2)
-    ylims!(ax, 0, 100)
+    ylims!(ax, 0, 135)
     f
 
 elseif model_name == "cam-clay"

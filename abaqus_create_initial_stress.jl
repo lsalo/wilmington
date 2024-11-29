@@ -130,6 +130,7 @@ id_rpo = vcat(elements_inp[1][:, 1], elements_inp[4][:, 1], elements_inp[6][:, 1
 writedlm(join([dir_out, "id_ranger_pico_overPico.dat"]), id_rpo)
 writedlm(join([dir_out, "id_pico.dat"]), elements_inp[4][:, 1])
 writedlm(join([dir_out, "id_overPico.dat"]), elements_inp[6][:, 1])
+writedlm(join([dir_out, "id_bottomRanger.dat"]), elements_inp[2][:, 1])
 
 # 4. PLOTS
 x_plot = LinRange(0, 20, 41)
