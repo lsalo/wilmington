@@ -10,7 +10,8 @@ import h5py
 import os
 
 # Load the data from the .dat file
-dir = "C:/Users/lsalo/abaqus/wilmington/output/plastic/extracted/S/TOPRANGERSURFACE/"
+#dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/ENTIRE_DOMAIN/" # GRS3
+dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/TOPRANGERSURFACE/" # GRS3
 filenames = os.listdir(dir)
 filenames = [os.path.splitext(filename)[0] for filename in filenames]
 id_typ = "nodes"

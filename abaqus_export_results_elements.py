@@ -2,12 +2,12 @@ from odbAccess import *
 import os
 
 # Paths and options
-dir_odb = "./output/plastic/"
-fileNameToRead = dir_odb + "wilmington_plastic.odb"
+dir_odb = "./wilmington/plastic-62/"
+fileNameToRead = dir_odb + "wilmington_plastic-62.odb"
 field_name = "S"    
 elset_name = "ENTIRE_DOMAIN"
 #step_names = "Geostatic"
-steps = [0] + list(range(12, 301, 12)) 
+steps = [0] + list(range(12, 470, 12)) 
 
 # Open the output database
 print("\n \t Reading file " + fileNameToRead + "\n ")
