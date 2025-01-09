@@ -6,8 +6,9 @@ cd(@__DIR__)
 using Pkg
 Pkg.activate(@__DIR__)
 
-using Distributed, SharedArrays
+using Distributed
 addprocs(12)
+@everywhere using SharedArrays
 
 using LinearAlgebra
 @everywhere using HDF5
@@ -15,25 +16,24 @@ using DelimitedFiles
 using CairoMakie
 CairoMakie.activate!()
 
-@everywhere using Revise
 @everywhere  lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-@everywhere includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
+@everywhere include(joinpath(lib_dir, "modules", "arrayOps.jl"))
 @everywhere using .ArrayOps
-includet(joinpath(lib_dir, "modules", "abaqus.jl"))
+include(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
-includet(joinpath(lib_dir, "modules", "fileio.jl"))
+include(joinpath(lib_dir, "modules", "fileio.jl"))
 using .Fileio
 
 
 ## Directories and options
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-7/extracted/S/ENTIRE_DOMAIN/"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-7/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-7/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-7/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -45,7 +45,7 @@ tn = 470
 tstep = 2629746 / 31556952
 t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=470)))
 t = t[vcat(1, 13:12:length(t))]
-node_select = "max_rebound"
+node_select = "max_subsidence"
 
 
 ## Get nodal data
@@ -91,7 +91,8 @@ end
 ## Get mesh info (id of Ranger elements containing selected node)
 # Note that we assume that Ranger element ids start at 1, and data are sorted
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
-id_elements = elements_inp[1][any(elements_inp[1][:, 2:5] .== nod_u, dims=2), 1]
+idx = vec(any(elements_inp[1][:, 2:5] .== nod_u, dims=2))
+id_elements = elements_inp[1][idx, 1]
 
 
 ## Get Ranger element with closest centroid to node above, and stress evolution
@@ -133,7 +134,7 @@ e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
 # p_eff_el below should be very close to p_eff[1] above
 s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
 p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
-p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) 
+p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
 
 # Shear envelope and cap
 e_p0 = 0
@@ -176,7 +177,7 @@ elseif node_select == "max_rebound"
 end
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
-save(join([figs_dir, "stres_path_ranger_uzmin.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "stres_path_ranger_uzmin.pdf"]), f, pt_per_unit = 1)
 
 
 # 
@@ -194,4 +195,4 @@ xlims!(ax, 1935, 1977)
 ylims!(ax, 0, 10)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-save(join([figs_dir, "u3_surface.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "u3_surface.pdf"]), f, pt_per_unit = 1)
