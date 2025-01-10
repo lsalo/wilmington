@@ -26,14 +26,15 @@ using .Fileio
 
 
 ## Directories and options
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-71"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-71/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-71/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-71/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-62/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-71/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -45,11 +46,11 @@ tn = 470
 tstep = 2629746 / 31556952
 t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=470)))
 t = t[vcat(1, 13:12:length(t))]
-node_select = "max_subsidence"
+node_select = "max_rebound"
 
 
 ## Get nodal data
-# Ranger u evo at a given node
+# Max diplacement node at top Ranger surface
 u_topranger_fin = readdlm(join([abaqus_dir_nod, abaqus_fn_nod[end]]), ',', skipstart=1)
 if node_select == "max_subsidence"
     id_u = argmin(u_topranger_fin[:, end])
@@ -65,7 +66,7 @@ for i in 1:n
     u_z[i] = file[id_u, end]
 end
 
-# Max displacement at the surface
+# Max displacement at the surface (may not be the same node in all steps)
 u_z_top = Vector{Float32}(undef, n)
 for i in 1:n
     file = readdlm(join([abaqus_dir_nod3, abaqus_fn_nod3[i]]), ',', skipstart=1)
@@ -124,7 +125,7 @@ end
 # Plot parameters
 # Cap model parameters
 d = 1e-3        # MPa
-b = 52.41       # deg
+b = 58.6        # 52.41 deg
 R = 0.2         # 1.227
 W = 0.27        # [-]
 D = 0.7143      # 1/kbar
@@ -134,19 +135,24 @@ e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
 # p_eff_el below should be very close to p_eff[1] above
 s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
 p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
-p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
+#p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
+#p_b = 1.19*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-62
+#p_b = 1.18*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-70
+p_b = 1.17*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-71
 
 # Shear envelope and cap
 e_p0 = 0
 p_Fs = Vector{}(0:10:50)
 q_Fs = p_Fs.*tand(b) .+ d
 
-p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))
+p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))             # pb[1] = Initial cap position
 if node_select == "max_subsidence"
-    q_Fc = vcat(Vector{}(0:1:29), 29.01:0.002:29.052) # p_b[1]
-    #q_Fc = vcat(Vector{}(0:1:27), 27.1:.1:27.3)  # p_b[5]
+    #q_Fc = vcat(Vector{}(0:1:28), 28.01:0.01:28.2)   # p_b[1], 
+    q_Fc = vcat(Vector{}(0:1:33), 33.01:0.01:33.2)   # p_b[1], b = 58
+    #q_Fc = vcat(Vector{}(0:1:27), 27.1:.1:27.3)        # p_b[5], 
 elseif node_select == "max_rebound"
-    q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9) # p_b[1]
+    #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
+    q_Fc = vcat(Vector{}(0:1:41), 41.02:.02:41.4)         # p_b[1],  b= 58
 end
 p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
@@ -157,8 +163,8 @@ ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \
 ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s}")
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :solid, label=L"F_\text{c}")
 sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 8, color=t, colormap=:rainbow, label=L"\text{Ranger element}")
-xlims!(ax, 0, 40)
-ylims!(ax, 0, 40)
+xlims!(ax, 0, 45)
+ylims!(ax, 0, 45)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 cbar = Colorbar(f[1, 2], sc1, label=L"\text{Year}", labelsize=12, width=12, ticklabelsize=12)
 
@@ -170,14 +176,14 @@ ax = Axis(f[1, 3], xlabel = L"\sigma_{33} \; \text{ [MPa]}", ylabel = L"u_z \; \
 sc1 = scatter!(ax, s_33/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \; \text{ (top Ranger)}")
 if node_select == "max_subsidence"
     xlims!(ax, -10, -20)
-    ylims!(ax, -6, 0)
+    ylims!(ax, -8, 0)
 elseif node_select == "max_rebound"
     xlims!(ax, -10, -20)
     ylims!(ax, -1, 5)
 end
-axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
+axislegend(position = :rb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
-#save(join([figs_dir, "stres_path_ranger_uzmin.pdf"]), f, pt_per_unit = 1)
+save(join([figs_dir, "stres_path_ranger_", node_select, "_", sim_name, ".pdf"]), f, pt_per_unit = 1)
 
 
 # 

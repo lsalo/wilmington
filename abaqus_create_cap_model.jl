@@ -17,7 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-cap_case = "above-basement"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
+cap_case = "pico"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
@@ -85,20 +85,20 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.17
-        f_K = 0.25
+        f_p = 1.15
+        f_K = 0.1
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.19
-        f_K = 0.05
+        f_p = 1.15
+        f_K = 0.1
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.19
-        f_K = 0.05
+        f_p = 1.15
+        f_K = 0.1
     elseif cap_case == "bottomRanger"
         z_pt = -[1160, 1170, 1990, 2000, 4790, 5000]
         #z_pt = -[25, 30, 475, 485, 1360, 1370]
