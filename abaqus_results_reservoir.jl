@@ -26,15 +26,15 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-73"
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-73/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-76"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-76/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-73/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-76/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-73/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-76/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-73/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-76/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -126,7 +126,7 @@ end
 # Cap model parameters
 d = 1e-3        # MPa
 b = 58.6        # 52.41 deg
-R = 0.2         # 1.227
+R = 0.5         # 1.227
 W = 0.27        # [-]
 D = 0.7143      # 1/kbar
 e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
@@ -139,7 +139,9 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.19*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-62
 #p_b = 1.18*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-70
 #p_b = 1.17*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-71
-p_b = 1.15*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-73
+#p_b = 1.15*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-73
+#p_b = 1.08*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-75
+p_b = 1.41*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-75
 
 # Shear envelope and cap
 e_p0 = 0
@@ -149,8 +151,8 @@ q_Fs = p_Fs.*tand(b) .+ d
 p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))             # pb[1] = Initial cap position
 if node_select == "max_subsidence"
     #q_Fc = vcat(Vector{}(0:1:28), 28.01:0.01:28.2)   # p_b[1], 
-    q_Fc = vcat(Vector{}(0:1:32), 32.01:0.01:32.6)   # p_b[1], b = 58
-    #q_Fc = vcat(Vector{}(0:1:27), 27.1:.1:27.3)        # p_b[5], 
+    #q_Fc = vcat(Vector{}(0:1:34), 34.01:0.01:34.8)   # p_b[1], b = 58
+    q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)        
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58

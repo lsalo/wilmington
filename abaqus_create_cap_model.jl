@@ -17,6 +17,7 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
+regime = "reverse"
 cap_case = "above-basement"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
@@ -24,8 +25,14 @@ model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 # Read initial stress data and convert to cap stress space
 centroids       = readdlm(join([dir_in, "element_centroids.dat"]), ',')
 nodal_depth     = readdlm(join([dir_in, "nodal_depth.dat"]), ',')
-peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
-stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
+if regime == "reverse"
+    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
+    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
+elseif regime == "normal"
+    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_normal.inp"]), ',')
+    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
+end
+
 if cap_case == "ranger"
     id_cells = 1:67736     # elements of Ranger elementset, grid file WilmingtonMesh_AllFaults_Rotated_Coarse.inp
 elseif cap_case == "entire_domain"
@@ -54,7 +61,7 @@ if model_name == "mdpcm"
     # Cap model parameters 
     d = 1e-3        # MPa
     b = 58.6        # 52.41 deg
-    R = 0.5         # 0.2
+    R = 0.1         # 0.2
     W = 0.27        # [-]
     D = 0.7143      # 1/kbar
 
@@ -65,7 +72,7 @@ if model_name == "mdpcm"
         z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.41 #1.08 (R=0.1) 1.15-1.18 (R=0.2)
+        f_p = 1.02 #1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5)
         f_K = 0.1
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
@@ -85,8 +92,8 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.41 #1.08 #1.15
-        f_K = 0.1
+        f_p = 1.08 #1.02 #1.18 #1.41 #1.08 #1.15
+        f_K = 0.05
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
@@ -97,7 +104,7 @@ if model_name == "mdpcm"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1355, 1360]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.41 #1.08 #1.15
+        f_p = 1.18 #1.41 #1.08 #1.15
         f_K = 0.1
     elseif cap_case == "bottomRanger"
         z_pt = -[1160, 1170, 1990, 2000, 4790, 5000]
@@ -106,7 +113,7 @@ if model_name == "mdpcm"
         f_p = 1.19
         f_K = 0.05
     end
-    fn_hardening = "hardening_curve_" * string(f_p) * "peff_" * string(f_K) * "Kosloff_" * cap_case * ".inp"
+    fn_hardening = "hardening_curve_" * string(f_p) * "peff_" * string(f_K) * "Kosloff_" * cap_case * "_" * regime * ".inp"
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
     peff_id = Vector{}(undef, nc)
@@ -167,8 +174,10 @@ if model_name == "mdpcm"
     e_p0 = 0
     if cap_case == "ranger" || cap_case == "ranger-pico"
         p_Fs = Vector{}(0:10:100)
-        q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))
-        #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))
+        q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))   # reverse regime pb[end]
+        #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))  # reverse regime pb[1]
+        #q_Fc = vcat(Vector{}(0:1:27), Vector{}(27.1:.1:28))   # normal
+        #q_Fc = vcat(Vector{}(0:1:8), Vector{}(8.05:.05:9.45)) 
     elseif cap_case == "entire_domain"
         p_Fs = Vector{}(0:10:400)
         q_Fc = vcat(Vector{}(0:10:400), Vector{}(400:1:407))
@@ -178,8 +187,10 @@ if model_name == "mdpcm"
         #q_Fc = vcat(Vector{}(0:1:15), Vector{}(15.1:.1:15.5))
     elseif cap_case == "overPico"
         p_Fs = Vector{}(0:10:100)
-        q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
+        #q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
         #q_Fc = vcat(Vector{}(0:.1:3), Vector{}(3.01:.01:3.1))
+        q_Fc = vcat(Vector{}(0:1:13), Vector{}(13.1:.1:13.7))
+        #q_Fc = Vector{}(0:.01:0.36)
     elseif cap_case == "bottomRanger"
         p_Fs = Vector{}(0:10:150)
         q_Fc = vcat(Vector{}(0:1:129), Vector{}(129.1:.1:129.5))
@@ -207,8 +218,8 @@ if model_name == "mdpcm"
         xlims!(ax, 0, 75)
         ylims!(ax, 0, 75)
     elseif cap_case == "overPico"
-        xlims!(ax, 0, 40)
-        ylims!(ax, 0, 40)
+        xlims!(ax, 0, 20)
+        ylims!(ax, 0, 20)
     elseif cap_case == "bottomRanger"
         xlims!(ax, 100, 115)
         ylims!(ax, 120, 135)
