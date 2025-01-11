@@ -80,14 +80,25 @@ lm_aphi_fmx = glm(@formula(y ~ x + x2 + x3 + x4), (x=x_fmx, x2 = x_fmx.^2, x3 = 
 
 # 2. PREDICT STRESS MAGNITUDES BASED ON CRITICALLY STRESSED CRUST
 # Ref: Lund Snee Thesis, Chapter 7
+# NOTE: pore pressures are negative for plots, but positive otherwise, hence the change of signs when adding pore pressure.
+# NOTE: Lund Snee Thesis uses positive compression, we use positive tension
+regime = "normal"
 z_plot = Vector{}(LinRange(0, -15, 41))
-a_phi = predict(lm_aphi, (x=(-1*z_plot),))
-p_plot   = 1000*9.807.*z_plot*1e3./1e6         # MPa
-s3_plot  = 2300*9.807.*z_plot*1e3./1e6         # MPa
-mu  = 0.6
-ratio_s1s3 = ((mu^2 +1)^0.5 + mu)^2       # effective stress ratio (S1 - p) / (S3 - p)
-s1_plot = ratio_s1s3*(s3_plot .- p_plot) .+ p_plot            # Reverse: S_H
-s2_plot = (a_phi .- 2.0).*(s1_plot .- s3_plot) .+ s3_plot     # Reverse: S_h
+p_plot = 1000*9.807.*z_plot*1e3./1e6                                    # [NEGATIVE] MPa
+sv_plot = 2300*9.807.*z_plot*1e3./1e6
+mu      = 0.6
+ratio_s1s3  = ((mu^2 +1)^0.5 + mu)^2                                    # effective stress ratio (S1 - p) / (S3 - p)
+if regime == "a_fit"
+    a_phi       = predict(lm_aphi, (x=(-1*z_plot),))
+    s3_plot     = sv_plot                                               # MPa
+    s1_plot     = ratio_s1s3*(s3_plot .- p_plot) .+ p_plot              # Reverse: S_H
+    s2_plot     = (a_phi .- 2.0).*(s1_plot .- s3_plot) .+ s3_plot       # Reverse: S_h
+elseif regime == "normal"
+    a_phi       = 0
+    s1_plot     = sv_plot
+    s3_plot     = (s1_plot .- p_plot)/ratio_s1s3 .+ p_plot
+    s2_plot     = a_phi*(s1_plot .- s3_plot) .+ s3_plot    # a_phi = 0 --> s2 = s3
+end
 
 
 # 3. ELEMENT CENTROIDS AND ASSIGN STRESS
@@ -99,28 +110,52 @@ centroids = get_element_centroids_inp(elements_all, nodes_inp)
 # Assign stress based on depth: tension postivie
 # ABAQUS coordinate system: s11 // x, s22 // y, s33 // z
 z = centroids[:, end]
-a_phi = predict(lm_aphi, (x=(-1e-3*z),))
-p = -1000*9.807.*z   
-s3 = 2300*9.807.*z  
-s1 = ratio_s1s3*(s3 .+ p) .- p 
-s2 = (a_phi .- 2.0).*(s1 .- s3) .+ s3 
+p = -1000*9.807.*z                  # NOTE: Positive pore pressure here (Positive tension in Abaqus)  
+sv = 2300*9.807.*z  
 t = zeros(length(z))
-
-# Also get mean stress, so that the hardening curve is a function of depth
 z_nod = nodes_inp[:, end]
-a_phi = predict(lm_aphi, (x=(-1e-3*z_nod),)) 
 p_nod = -1000*9.807.*z_nod  
-s3_nod = 2300*9.807.*z_nod  
-s1_nod = ratio_s1s3*(s3_nod .+ p_nod) .- p_nod 
-s2_nod = (a_phi .- 2.0).*(s1_nod .- s3_nod) .+ s3_nod
+sv_nod = 2300*9.807.*z_nod  
+if regime == "a_fit"
+    # Elements (initial stresses)
+    a_phi   = predict(lm_aphi, (x=(-1e-3*z),))  
+    s3      = sv  
+    s1      = ratio_s1s3*(s3 .+ p) .- p 
+    s2      = (a_phi .- 2.0).*(s1 .- s3) .+ s3 
+
+    # Nodes (initial mean effective stress)
+    a_phi = predict(lm_aphi, (x=(-1e-3*z_nod),)) 
+    s3_nod = sv_nod 
+    s1_nod = ratio_s1s3*(s3_nod .+ p_nod) .- p_nod 
+    s2_nod = (a_phi .- 2.0).*(s1_nod .- s3_nod) .+ s3_nod
+
+elseif regime == "normal"
+    a_phi   = 0
+    s1      = sv
+    s3      = (s1 .+ p)/ratio_s1s3 .- p
+    s2      = a_phi*(s1 .- s3) .+ s3   
+    
+    s1_nod  = sv_nod
+    s3_nod  = (s1_nod .+ p_nod)/ratio_s1s3 .- p_nod
+    s2_nod  = a_phi*(s1_nod .- s3_nod) .+ s3_nod  
+end
+
+# Also get mean stress, so that the hardening curve is a function of depth 
 peff_ini_nod = vec(-(1/3)*sum(hcat(s1_nod .+ p_nod, s2_nod .+ p_nod, s3_nod .+ p_nod), dims=2))
 
 # Save file for use with Abaqus
 # NOTE: EFFECTIVE STRESSES!
-stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
-writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), stress_out, ',')
+if regime == "a_fit"        # reverse, s11 = sxx, s22 = syy, s33 = szz
+    stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
+    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), stress_out, ',')
+elseif regime == "normal"   # normal, s11 = szz, s22 = sxx, s33 = syy
+    stress_out = hcat(centroids[:,1], s2 .+ p, s3 .+ p, s1 .+ p, t, t, t)
+    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), stress_out, ',')
+end
+writedlm(join([dir_out, "peff_ini_nod_normal.inp"]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
+
+# Save centroids and nodal depths
 writedlm(join([dir_out, "element_centroids.dat"]), centroids, ',')
-writedlm(join([dir_out, "peff_ini_nod.inp"]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
 writedlm(join([dir_out, "nodal_depth.dat"]), hcat(nodes_inp[:, 1], nodes_inp[:, end]), ',')
 
 # Save Ranger-Pico element ids
@@ -161,9 +196,18 @@ ax = Axis(f[1, 2], xlabel = L"\text{Stress [MPa]}", xlabelsize = 16)
 #lin2 = lines!(ax, predict(lm_s2, (x=x_plot, x2=x_plot.^2, x3=x_plot.^3, x4=x_plot.^4,)), x_plot, color =RGBAf(0.5,0.5,0.5,1), linewidth = 1.5, label=L"P_4")
 #lin3 = lines!(ax, predict(lm_s3, (x=x_plot,)), x_plot, color = RGBAf(0.8,0.8,0.8,1), linewidth = 2, label=L"P_1")
 #lin4 = lines!(ax, predict(lm_sv, (x=x_plot,)), x_plot, color = RGBAf(0.8, 0.8, 0.8, 1.0), linewidth = 1) equal to s3
-lin4 = lines!(ax, s3_plot, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3")
-lin5 = lines!(ax, s2_plot, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{h} \text{ (crit. stress)}")
-lin6 = lines!(ax, s1_plot, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=L"S_\text{H} \text{ (crit. stress)}")
+if regime == "afit"
+    s1_label = L"S_\text{H} \text{ (crit. stress)}"
+    s2_label = L"S_\text{h} \text{ (crit. stress)}"
+    s3_label = L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3"
+elseif regime == "normal"
+    s2_label = L"S_\text{H} \text{ (crit. stress)}"
+    s3_label = L"S_\text{h} \text{ (crit. stress)}"
+    s1_label = L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3"
+end
+lin4 = lines!(ax, s3_plot, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=s3_label)
+lin5 = lines!(ax, s2_plot, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=s2_label)
+lin6 = lines!(ax, s1_plot, z_plot*-1, color = RGBAf(0.5, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=s1_label)
 lin7 = lines!(ax, p_plot, z_plot*-1, color = :blue, linewidth = 1, linestyle = :solid, label=L"\rho_\text{w} g z")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -750)
