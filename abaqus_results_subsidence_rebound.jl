@@ -12,13 +12,12 @@ using DelimitedFiles
 using CairoMakie
 CairoMakie.activate!()
 
-using Revise
 lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
+include(joinpath(lib_dir, "modules", "arrayOps.jl"))
 using .ArrayOps
-includet(joinpath(lib_dir, "modules", "abaqus.jl"))
+include(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
-includet(joinpath(lib_dir, "modules", "fileio.jl"))
+include(joinpath(lib_dir, "modules", "fileio.jl"))
 using .Fileio
 
 
@@ -27,7 +26,7 @@ tstep = 2629746 / 31556952
 t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=469)))
 t = t[vcat(1, 13:12:length(t))]
 
-idx_run = [7 62]
+idx_run = [7, 88]
 nruns = length(idx_run)
 uz_top_subsMax = zeros(length(t), nruns)
 uz_top_rebMax = zeros(length(t), nruns)
@@ -76,12 +75,12 @@ f = Figure(size=(600, 300))
 ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L" u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1980, yticks =-10:2:0)
 sc1 = scatter!(ax, field_data[1, :], field_data[2, :], markersize=10, color=RGBAf(1,1,1,0), marker=:rect, strokewidth=1, strokecolor=:black, label=L"\text{ Field data}")
 #ln1 = lines!(ax, t, uz_top_subs[:, 1], color=:black, linewidth=1, label=L"\text{Plastic-7}")
-ln2 = lines!(ax, t, uz_top_subs[:, 2], color=:black, linewidth=1, label=L"\text{Plastic-62}")
+ln2 = lines!(ax, t, uz_top_subs[:, 2], color=:black, linewidth=1, label=L"\text{Plastic-88}")
 xlims!(ax, 1935, 1980)
 ylims!(ax, -10, 0)
-axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-save(join([figs_dir, "u3_surface_plastic-62.pdf"]), f, pt_per_unit = 1)
+save(join([figs_dir, "u3_surface_plastic-88.pdf"]), f, pt_per_unit = 1)
 
 # Subs and rebound, discrete points
 field_data = [1958 1965 1975;-7.9 -8.8 -7.4] 

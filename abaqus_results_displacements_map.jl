@@ -28,8 +28,8 @@ using .MakiePolyPlot
 
 # Directories
 dir_inp     = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
-dir_abaqus  = "C:/Users/lsalo/abaqus/simulation_data/wilmington_old/output/plastic/extracted/U/"
-figs_dir    = "C:/Users/lsalo/julia/graphics/figs/wilmington/2024-05-ERL/" 
+dir_abaqus  = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-88/extracted/U/"
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
 #dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/grids/"
 #dir_abaqus = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/output/elastic/extracted/S/"
 #figs_dir = "/Users/lluis/Documents/julia/graphics/figs/wilmington/"
@@ -39,14 +39,15 @@ figs_dir    = "C:/Users/lsalo/julia/graphics/figs/wilmington/2024-05-ERL/"
 # Get connectivity fron .inp grid: We need to get the *face* connectivity of node sets
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 #nsets_to_export = ["TopBC", "TopRangerSurface"]
+nsets_to_export = ["Wilmington"]
 #nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
-nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
+#nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
 # Simulation data: get values at the nodes from abaqus
 nodal_disp = Vector{}(undef, length(nsets_to_export))
-tstep = "step_300"
+tstep = "step_468"
 for nset in eachindex(nsets_to_export)
     data = readdlm(join([dir_abaqus, nsets_to_export[nset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
     nodal_disp[nset] = Matrix{Union{Int,Float64}}(data)
@@ -55,7 +56,7 @@ end
 
 # 2. Element data (connectivity and displacements)
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-elsets_to_export = ["Ranger"]
+elsets_to_export = ["Ranger"] #OverburdenPico
 _, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list_el = get_face_connectivity_elsets(elsets_to_export, elset_names_inp, elements_inp, "tetrahedral")
 
@@ -88,5 +89,5 @@ end
 # Make plot
 labl = L"$u_z$ [m]"
 mycmap = cgrad(:lapaz)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.3*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "u_3_ranger_TearFaults", target_dpi=400, target_size_in=(15,12))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.2*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-88_t468", target_dpi=400, target_size_in=(15,12))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
