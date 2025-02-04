@@ -82,7 +82,7 @@ lm_aphi_fmx = glm(@formula(y ~ x + x2 + x3 + x4), (x=x_fmx, x2 = x_fmx.^2, x3 = 
 # Ref: Lund Snee Thesis, Chapter 7
 # NOTE: pore pressures are negative for plots, but positive otherwise, hence the change of signs when adding pore pressure.
 # NOTE: Lund Snee Thesis uses positive compression, we use positive tension
-regime = "normal"
+regime = "strike-slip"
 z_plot = Vector{}(LinRange(0, -15, 41))
 p_plot = 1000*9.807.*z_plot*1e3./1e6                                    # [NEGATIVE] MPa
 sv_plot = 2300*9.807.*z_plot*1e3./1e6
@@ -98,6 +98,11 @@ elseif regime == "normal"
     s1_plot     = sv_plot
     s3_plot     = (s1_plot .- p_plot)/ratio_s1s3 .+ p_plot
     s2_plot     = a_phi*(s1_plot .- s3_plot) .+ s3_plot    # a_phi = 0 --> s2 = s3
+elseif regime == "strike-slip"
+    a_phi       = 1.75
+    s2_plot     = sv_plot
+    s1_plot     = (1/(2-a_phi)*s2_plot .- 1/(2-a_phi)*p_plot .+ p_plot .+ p_plot.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    s3_plot     = (s1_plot .- p_plot) ./ ratio_s1s3 .+ p_plot     
 end
 
 
@@ -137,7 +142,17 @@ elseif regime == "normal"
     
     s1_nod  = sv_nod
     s3_nod  = (s1_nod .+ p_nod)/ratio_s1s3 .- p_nod
-    s2_nod  = a_phi*(s1_nod .- s3_nod) .+ s3_nod  
+    s2_nod  = a_phi*(s1_nod .- s3_nod) .+ s3_nod 
+    
+elseif regime == "strike-slip"
+    a_phi   = 1.75
+    s2      = sv
+    s1      = (1/(2-a_phi)*s2 .+ 1/(2-a_phi)*p .- p .- p.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    s3      = (s1 .+ p)/ratio_s1s3 .- p
+    
+    s2_nod  = sv_nod
+    s1_nod  = (1/(2-a_phi)*s2_nod .+ 1/(2-a_phi)*p_nod .- p_nod .- p_nod.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    s3_nod  = (s1_nod .+ p_nod)/ratio_s1s3 .- p_nod
 end
 
 # Also get mean stress, so that the hardening curve is a function of depth 
@@ -148,11 +163,17 @@ peff_ini_nod = vec(-(1/3)*sum(hcat(s1_nod .+ p_nod, s2_nod .+ p_nod, s3_nod .+ p
 if regime == "a_fit"        # reverse, s11 = sxx, s22 = syy, s33 = szz
     stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
     writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), stress_out, ',')
+    fnp = "peff_ini_nod.inp"
 elseif regime == "normal"   # normal, s11 = szz, s22 = sxx, s33 = syy
     stress_out = hcat(centroids[:,1], s2 .+ p, s3 .+ p, s1 .+ p, t, t, t)
     writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), stress_out, ',')
+    fnp = "peff_ini_nod_normal.inp"
+elseif regime == "strike-slip" # strike-slip, s11 = sxx, s22 = szz, s33 = syy
+    stress_out = hcat(centroids[:,1], s1 .+ p, s3 .+ p, s2 .+ p, t, t, t)
+    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), stress_out, ',')
+    fnp = "peff_ini_nod_strike-slip.inp"
 end
-writedlm(join([dir_out, "peff_ini_nod_normal.inp"]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
+writedlm(join([dir_out, fnp]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
 
 # Save centroids and nodal depths
 writedlm(join([dir_out, "element_centroids.dat"]), centroids, ',')
@@ -204,6 +225,10 @@ elseif regime == "normal"
     s2_label = L"S_\text{H} \text{ (crit. stress)}"
     s3_label = L"S_\text{h} \text{ (crit. stress)}"
     s1_label = L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3"
+elseif regime == "strike-slip"
+    s1_label = L"S_\text{H} \text{ (crit. stress)}"
+    s3_label = L"S_\text{h} \text{ (crit. stress)}"
+    s2_label = L"\rho g z \text{, } \rho = 2300 \text{ kg/m}^3"
 end
 lin4 = lines!(ax, s3_plot, z_plot*-1, color = RGBAf(1.0, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=s3_label)
 lin5 = lines!(ax, s2_plot, z_plot*-1, color = RGBAf(0.7, 0.0, 0.0, 1), linewidth = 1.5, linestyle = :dashdot, label=s2_label)

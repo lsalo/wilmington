@@ -26,15 +26,15 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-41"
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-41/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-89"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-41/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-41/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-41/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -122,13 +122,13 @@ end
 # Plot 1: (a) stress path of ranger cell closest to node with specified u_z (e.g., max(u_z))
 #         (b) u_z vs s33 (top ranger)
 
-regime = "reverse"
+regime = "normal"
 
 # Plot parameters
 # Cap model parameters
 d = 1e-3        # MPa
-b = 52.41        # 55, 58.6, 52.41 deg
-R = 0.2         # 1.227
+b = 55        # 55, 58.6, 52.41 deg
+R = 0.3         # 1.227
 W = 0.27        # [-]
 D = 0.7143      # 1/kbar
 e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
@@ -142,7 +142,7 @@ elseif regime == "normal"
 end
 p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
-p_b = 1.19*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-41
+#p_b = 1.19*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-41
 #p_b = 1.19*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-62
 #p_b = 1.18*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-70, plastic-77
 #p_b = 1.17*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-71
@@ -152,7 +152,7 @@ p_b = 1.19*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-41
 #p_b = 1.02*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-78
 #p_b = 1.35*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-80
 #p_b = 1.35*p_eff_ini_el .+ 0.6*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-84
-#p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88
+p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88, plastic-89
 
 # Shear envelope and cap
 e_p0 = 0
@@ -161,10 +161,10 @@ q_Fs = p_Fs.*tand(b) .+ d
 
 p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))             # pb[1] = Initial cap position
 if node_select == "max_subsidence"
-    q_Fc = vcat(Vector{}(0:1:27), 27.01:0.01:28.0)   # p_b[1], 
+    #q_Fc = vcat(Vector{}(0:1:27), 27.01:0.01:28.0)   # p_b[1], 
     #q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
-    #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)    # normal regime  
+    q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)    # normal regime  
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -237,4 +237,4 @@ ylims!(ax, -10, 0)
 #ylims!(ax, 0, 10)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-#save(join([figs_dir, "u3_surface_plastic-41.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "u3_surface_plastic-89.pdf"]), f, pt_per_unit = 1)
