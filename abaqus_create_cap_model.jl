@@ -17,8 +17,8 @@ CairoMakie.activate!()
 dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
-regime = "normal"
-cap_case = "above-basement"  # entire_domain | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
+regime = "strike-slip"
+cap_case = "above-basement"  # entire_domain | above-basement | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
 
@@ -31,6 +31,9 @@ if regime == "reverse"
 elseif regime == "normal"
     peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_normal.inp"]), ',')
     stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
+elseif regime == "strike-slip"
+    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_strike-slip.inp"]), ',')
+    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), ',')
 end
 
 if cap_case == "ranger"
@@ -68,12 +71,12 @@ if model_name == "mdpcm"
     # Hardening curve
     # We define hydrostatic yield (p_b) as 118% of the initial p_eff
     if cap_case == "ranger"
-        z_pt = -[930, 940, 1420, 1430, 2830, 2840]
-        #z_pt = -[890, 900, 1420, 1430, 2890, 3000]
+        #z_pt = -[930, 940, 1420, 1430, 2830, 2840]
+        z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.01 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3)
-        f_K = 0.1
+        f_p = 1.2 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3, normal) 1.2 (R=0.3, strike-slip)
+        f_K = 0.5
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
@@ -92,14 +95,14 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.35 #1.35 #1.02 #1.18 #1.41 #1.08 #1.15
-        f_K = 0.8
+        f_p = 1.2 #1.35 #1.02 #1.18 #1.41 #1.08 #1.15
+        f_K = 0.25
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
         z_pt = -[450, 460, 950, 1000, 2620, 2650]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.15
-        f_K = 0.1
+        f_p = 1.2
+        f_K = 0.25
     elseif cap_case == "overPico"
         z_pt = -[0, 1, 475, 485, 1360, 1370]
         #z_pt = -[25, 30, 475, 485, 1355, 1360]
@@ -175,9 +178,11 @@ if model_name == "mdpcm"
     if cap_case == "ranger" || cap_case == "ranger-pico"
         p_Fs = Vector{}(0:10:100)
         #q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))   # reverse regime pb[end]
-        q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))  # reverse regime pb[1]
+        #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))  # reverse regime pb[1]
         #q_Fc = vcat(Vector{}(0:1:25), Vector{}(25.02:.02:26.66))   # normal
         #q_Fc = vcat(Vector{}(0:1:8), Vector{}(8.05:.05:9.15)) 
+        #q_Fc = vcat(Vector{}(0:1:53), Vector{}(53.01:.01:53.3)) #strike-slip
+        q_Fc = vcat(Vector{}(0:1:17), Vector{}(17.01:.01:17.7)) #strike-slip
     elseif cap_case == "entire_domain"
         p_Fs = Vector{}(0:10:400)
         q_Fc = vcat(Vector{}(0:10:400), Vector{}(400:1:407))
@@ -185,6 +190,8 @@ if model_name == "mdpcm"
         p_Fs = Vector{}(0:10:100)
         q_Fc = vcat(Vector{}(0:1:71), Vector{}(71.1:.1:71.2))
         #q_Fc = vcat(Vector{}(0:1:15), Vector{}(15.1:.1:15.5))
+        #q_Fc = vcat(Vector{}(0:1:49), Vector{}(49.01:.01:49.4))
+        #q_Fc = vcat(Vector{}(0:1:8), Vector{}(8.01:.01:9.1))
     elseif cap_case == "overPico"
         p_Fs = Vector{}(0:10:100)
         #q_Fc = vcat(Vector{}(0:1:37), Vector{}(37.1:.1:37.5))
@@ -197,8 +204,8 @@ if model_name == "mdpcm"
         #q_Fc = vcat(Vector{}(0:1:31), Vector{}(31.1:.1:31.3))
     end
     q_Fs = p_Fs.*tand(b) .+ d
-    #p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
-    p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
+    p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
+    #p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
@@ -209,8 +216,8 @@ if model_name == "mdpcm"
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
     #text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
     if cap_case == "ranger" || cap_case == "ranger-pico"
-        xlims!(ax, 0, 30)
-        ylims!(ax, 0, 30)
+        xlims!(ax, 0, 25)   # 30
+        ylims!(ax, 0, 25)   # 30
     elseif cap_case == "entire_domain"
         xlims!(ax, 0, 400)
         ylims!(ax, 0, 450)

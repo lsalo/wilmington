@@ -101,7 +101,9 @@ elseif regime == "normal"
 elseif regime == "strike-slip"
     a_phi       = 1.75
     s2_plot     = sv_plot
-    s1_plot     = (1/(2-a_phi)*s2_plot .- 1/(2-a_phi)*p_plot .+ p_plot .+ p_plot.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    #s1_plot     = (1/(2-a_phi)*s2_plot .- 1/(2-a_phi)*p_plot .+ p_plot .+ p_plot.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    A           = a_phi + (-a_phi +1)/3.12 -2
+    s1_plot     = ((A + 1).*p_plot - s2_plot) ./ A
     s3_plot     = (s1_plot .- p_plot) ./ ratio_s1s3 .+ p_plot     
 end
 
@@ -147,11 +149,13 @@ elseif regime == "normal"
 elseif regime == "strike-slip"
     a_phi   = 1.75
     s2      = sv
-    s1      = (1/(2-a_phi)*s2 .+ 1/(2-a_phi)*p .- p .- p.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    #s1      = (1/(2-a_phi)*s2 .+ 1/(2-a_phi)*p .- p .- p.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    s1      = ((A + 1).*(-p) - s2) ./ A
     s3      = (s1 .+ p)/ratio_s1s3 .- p
     
     s2_nod  = sv_nod
-    s1_nod  = (1/(2-a_phi)*s2_nod .+ 1/(2-a_phi)*p_nod .- p_nod .- p_nod.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    #s1_nod  = (1/(2-a_phi)*s2_nod .+ 1/(2-a_phi)*p_nod .- p_nod .- p_nod.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
+    s1_nod = ((A + 1).*(-p_nod) - s2_nod) ./ A
     s3_nod  = (s1_nod .+ p_nod)/ratio_s1s3 .- p_nod
 end
 
