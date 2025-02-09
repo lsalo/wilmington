@@ -26,15 +26,15 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-89"
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-92"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-92/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-92/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-92/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-89/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-92/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -122,7 +122,7 @@ end
 # Plot 1: (a) stress path of ranger cell closest to node with specified u_z (e.g., max(u_z))
 #         (b) u_z vs s33 (top ranger)
 
-regime = "normal"
+regime = "strike-slip"
 
 # Plot parameters
 # Cap model parameters
@@ -139,6 +139,8 @@ if regime == "reverse"
     s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
 elseif regime == "normal"
     s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
+elseif regime == "strike-slip"
+    s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), ',')
 end
 p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
@@ -152,7 +154,8 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.02*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-78
 #p_b = 1.35*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-80
 #p_b = 1.35*p_eff_ini_el .+ 0.6*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-84
-p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88, plastic-89
+#p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88, plastic-89
+p_b = 1.2*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-92
 
 # Shear envelope and cap
 e_p0 = 0
@@ -164,7 +167,8 @@ if node_select == "max_subsidence"
     #q_Fc = vcat(Vector{}(0:1:27), 27.01:0.01:28.0)   # p_b[1], 
     #q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
-    q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)    # normal regime  
+    #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)     # normal regime  
+    q_Fc = vcat(Vector{}(0:1:19), 19.02:.02:19.4)    # strike-slip regime
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -176,7 +180,7 @@ p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 # Make plot stress path
 f = Figure(size=(800, 350))
 ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s},\; \beta=52.4^\circ")
+ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s},\; \beta=55.0^\circ")
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :solid, label=L"F_\text{c}^0")
 sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 8, color=t, colormap=:rainbow, label=L"\text{Ranger element}")
 if regime == "reverse"
@@ -185,6 +189,9 @@ if regime == "reverse"
 elseif regime == "normal"
     xlims!(ax, 0, 16)
     ylims!(ax, 0, 16)
+elseif regime == "strike-slip"
+    xlims!(ax, 0, 30)
+    ylims!(ax, 0, 30)
 end
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 cbar = Colorbar(f[1, 2], sc1, label=L"\text{Year}", labelsize=12, width=12, ticklabelsize=12)
@@ -216,10 +223,20 @@ elseif regime == "normal"
         xlims!(ax, 5, 15)
         ylims!(ax, -1, 5)
     end
+elseif regime == "strike-slip"
+    ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=10:2:24, yticks=-10:2:0)
+    sc1 = scatter!(ax, p_eff/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \text{, top Ranger}")
+    if node_select == "max_subsidence"
+        xlims!(ax, 10, 24)
+        ylims!(ax, -10, 0)
+    elseif node_select == "max_rebound"
+        xlims!(ax, 5, 15)
+        ylims!(ax, -1, 5)
+    end
 end
 axislegend(position = :rb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
-save(join([figs_dir, "stres_path_ranger_", node_select, "_", sim_name, ".pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "stres_path_ranger_", node_select, "_", sim_name, ".pdf"]), f, pt_per_unit = 1)
 
 
 # 

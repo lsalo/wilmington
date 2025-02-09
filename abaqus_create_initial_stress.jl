@@ -99,7 +99,7 @@ elseif regime == "normal"
     s3_plot     = (s1_plot .- p_plot)/ratio_s1s3 .+ p_plot
     s2_plot     = a_phi*(s1_plot .- s3_plot) .+ s3_plot    # a_phi = 0 --> s2 = s3
 elseif regime == "strike-slip"
-    a_phi       = 1.75
+    a_phi       = 1.5
     s2_plot     = sv_plot
     #s1_plot     = (1/(2-a_phi)*s2_plot .- 1/(2-a_phi)*p_plot .+ p_plot .+ p_plot.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
     A           = a_phi + (-a_phi +1)/3.12 -2
@@ -147,7 +147,7 @@ elseif regime == "normal"
     s2_nod  = a_phi*(s1_nod .- s3_nod) .+ s3_nod 
     
 elseif regime == "strike-slip"
-    a_phi   = 1.75
+    a_phi   = 1.5
     s2      = sv
     #s1      = (1/(2-a_phi)*s2 .+ 1/(2-a_phi)*p .- p .- p.*(1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)) ./ (1 + 1/(ratio_s1s3*(2-a_phi)) -1/ratio_s1s3)
     s1      = ((A + 1).*(-p) - s2) ./ A
@@ -174,8 +174,8 @@ elseif regime == "normal"   # normal, s11 = szz, s22 = sxx, s33 = syy
     fnp = "peff_ini_nod_normal.inp"
 elseif regime == "strike-slip" # strike-slip, s11 = sxx, s22 = szz, s33 = syy
     stress_out = hcat(centroids[:,1], s1 .+ p, s3 .+ p, s2 .+ p, t, t, t)
-    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), stress_out, ',')
-    fnp = "peff_ini_nod_strike-slip.inp"
+    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_aphi", a_phi, ".inp"]), stress_out, ',')
+    fnp = join(["peff_ini_nod_aphi", a_phi, ".inp"])
 end
 writedlm(join([dir_out, fnp]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
 

@@ -18,6 +18,7 @@ dir_in = "C:/Users/lsalo/julia/output/wilmington/"
 figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
 
 regime = "strike-slip"
+a_phi = "1.5"
 cap_case = "above-basement"  # entire_domain | above-basement | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
@@ -32,8 +33,8 @@ elseif regime == "normal"
     peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_normal.inp"]), ',')
     stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
 elseif regime == "strike-slip"
-    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_strike-slip.inp"]), ',')
-    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), ',')
+    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_aphi1.5.inp"]), ',')
+    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi1.5.inp"]), ',')
 end
 
 if cap_case == "ranger"
@@ -64,19 +65,19 @@ if model_name == "mdpcm"
     # Cap model parameters 
     d = 1e-3        # MPa
     b = 55.0        # 58.6 (\phi = 40) 52.41 deg (32), 55 (35)
-    R = 0.3         # 0.4
+    R = 0.2         # 0.4
     W = 0.27        # [-]
     D = 0.7143      # 1/kbar
 
     # Hardening curve
     # We define hydrostatic yield (p_b) as 118% of the initial p_eff
     if cap_case == "ranger"
-        #z_pt = -[930, 940, 1420, 1430, 2830, 2840]
-        z_pt = -[890, 900, 1420, 1430, 2890, 3000]
+        z_pt = -[930, 940, 1420, 1430, 2830, 2840]
+        #z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.2 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3, normal) 1.2 (R=0.3, strike-slip)
-        f_K = 0.5
+        f_p = 1.12 #1.08 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3, normal) 1.2 (R=0.3, strike-slip)
+        f_K = 0.25
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
@@ -95,7 +96,7 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[0, 1, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.2 #1.35 #1.02 #1.18 #1.41 #1.08 #1.15
+        f_p = 1.12 #1.2 1.35 #1.02 #1.18 #1.41 #1.08 #1.15
         f_K = 0.25
     elseif cap_case == "pico"
         #z_pt = -[475, 485, 950, 1000, 2620, 2650]
@@ -116,7 +117,7 @@ if model_name == "mdpcm"
         f_p = 1.19
         f_K = 0.05
     end
-    fn_hardening = "hardening_curve_" * string(f_p) * "peff_" * string(f_K) * "Kosloff_" * cap_case * "_" * regime * ".inp"
+    fn_hardening = "hardening_curve_" * string(f_p) * "peff_" * string(f_K) * "Kosloff_" * cap_case * "_aphi" * a_phi * ".inp"
     nc = Int(length(z_pt)/2)
     p_b = Vector{}(undef, nc)
     peff_id = Vector{}(undef, nc)
@@ -181,8 +182,8 @@ if model_name == "mdpcm"
         #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))  # reverse regime pb[1]
         #q_Fc = vcat(Vector{}(0:1:25), Vector{}(25.02:.02:26.66))   # normal
         #q_Fc = vcat(Vector{}(0:1:8), Vector{}(8.05:.05:9.15)) 
-        #q_Fc = vcat(Vector{}(0:1:53), Vector{}(53.01:.01:53.3)) #strike-slip
-        q_Fc = vcat(Vector{}(0:1:17), Vector{}(17.01:.01:17.7)) #strike-slip
+        #q_Fc = vcat(Vector{}(0:1:45), Vector{}(45.01:.01:45.3)) #strike-slip
+        q_Fc = vcat(Vector{}(0:1:14), Vector{}(14.01:.01:14.7)) #strike-slip
     elseif cap_case == "entire_domain"
         p_Fs = Vector{}(0:10:400)
         q_Fc = vcat(Vector{}(0:10:400), Vector{}(400:1:407))
@@ -204,8 +205,8 @@ if model_name == "mdpcm"
         #q_Fc = vcat(Vector{}(0:1:31), Vector{}(31.1:.1:31.3))
     end
     q_Fs = p_Fs.*tand(b) .+ d
-    p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
-    #p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
+    #p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
+    p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
@@ -216,8 +217,8 @@ if model_name == "mdpcm"
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
     #text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
     if cap_case == "ranger" || cap_case == "ranger-pico"
-        xlims!(ax, 0, 25)   # 30
-        ylims!(ax, 0, 25)   # 30
+        xlims!(ax, 0, 20)   # 30
+        ylims!(ax, 0, 20)   # 30
     elseif cap_case == "entire_domain"
         xlims!(ax, 0, 400)
         ylims!(ax, 0, 450)
@@ -240,7 +241,7 @@ if model_name == "mdpcm"
     ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
     ln1 = lines!(ax, e_p, p_b[3]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
     xlims!(ax, 0, 0.2)
-    ylims!(ax, 0, 50)
+    ylims!(ax, 0, 60)
     f
 
 elseif model_name == "cam-clay"
