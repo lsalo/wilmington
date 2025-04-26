@@ -198,7 +198,7 @@ id_nodes_sed = findall(x -> x in nodes_sed, nodes_inp[:, 1])
 nodes_sed = nodes_inp[id_nodes_sed, :]
 nodes_bas = sort(unique(vcat(elements_bas[:, 2:end]...)))   
 id_nodes_bas = findall(x -> x in nodes_bas, nodes_inp[:, 1])
-id_nodes_bas = findall(x -> !(x in id_nodes_sed), id_nodes_bas) # nodes at basement top are already in sediment, so we remove them
+id_nodes_bas = filter(x -> !(x in id_nodes_sed), id_nodes_bas) # nodes at basement top are already in sediment, so we remove them
 nodes_bas = nodes_inp[id_nodes_bas, :]
 
 # Stress conditions
@@ -281,13 +281,15 @@ poly!(ax, Point2f.([0, -600, -600, 0, 0], [15, 15, 2.9, 2.9, 15]), color = RGBAf
 lines!(ax, [-600, 0], [2.9, 2.9], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.75, linestyle = :solid)
 text!(ax, -300, 2.0, text=L"\text{Sediments, mobilized } \mu=0.3", fontsize=14, color = :black)
 text!(ax, -300, 5.0, text=L"\text{Basement, mobilized } \mu=0.6", fontsize=14, color = :black)
-scatter!(ax, s1[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"S_1")
-scatter!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"S_2")
-scatter!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"S_3")
+scatter!(ax, s1[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\sigma_{xx}")
+scatter!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_{zz}")
+scatter!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\sigma_{yy}")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -550)
+text!(ax, -10, 11, text=L"A_\phi = 1.75", fontsize = 16)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
+#save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
 
 x_plot = LinRange(0, 20, 41)
 mycmap=cgrad(:nipy_spectral)
