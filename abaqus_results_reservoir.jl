@@ -26,15 +26,15 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-97"
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-97/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-99"
+abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-99/extracted/S/ENTIRE_DOMAIN/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
 
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-97/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-99/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-97/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-99/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-97/extracted/U/TOPBC/"
+abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-99/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -122,7 +122,7 @@ end
 # Plot 1: (a) stress path of ranger cell closest to node with specified u_z (e.g., max(u_z))
 #         (b) u_z vs s33 (top ranger)
 
-regime = "reverse"
+regime = "strike-slip"
 
 # Plot parameters
 # Cap model parameters
@@ -141,8 +141,9 @@ if regime == "reverse"
 elseif regime == "normal"
     s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
 elseif regime == "strike-slip"
-    s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), ',')
+    #s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_strike-slip.inp"]), ',')
     #s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi1.5.inp"]), ',')
+    s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_sed_mu0.3_bas_mu0.6_aphi1.75.inp"]), ',')
 end
 p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-7
@@ -159,7 +160,8 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88, plastic-89
 #p_b = 1.2*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-92
 #p_b = 1.12*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-94
-p_b = 1.1*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-97
+#p_b = 1.1*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-97
+p_b = 1.05*p_eff_ini_el .+ 0.5*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-97
 
 # Shear envelope and cap
 e_p0 = 0
@@ -169,10 +171,11 @@ q_Fs = p_Fs.*tand(b) .+ d
 p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))             # pb[1] = Initial cap position
 if node_select == "max_subsidence"
     #q_Fc = vcat(Vector{}(0:1:27), 27.01:0.01:28.0)   # p_b[1], 
-    q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
+    #q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
     #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)     # normal regime  
     #q_Fc = vcat(Vector{}(0:1:19), 19.02:.02:19.4)    # strike-slip regime
+    q_Fc = vcat(Vector{}(0:1:16), 16.02:.02:16.9)    # strike-slip regime
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -258,9 +261,9 @@ ln2 = lines!(ax, t, s_yy ./ 1e6, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, lab
 ln3 = lines!(ax, t, s_zz ./ 1e6, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\sigma_{zz}")
 text!(ax, L"\text{Depletion}", position = (1947, -5))
 text!(ax, L"\text{Repressurization}", position = (1959, -5))
-text!(ax, L"A_\phi = 2.5", position = (1937, -47))
+text!(ax, L"A_\phi = 1.75", position = (1937, -24))
 xlims!(ax, 1935, 1975)
-ylims!(ax, -50, 0)
+ylims!(ax, -25, 0)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=16)
 
 ax = Axis(f[1, 2], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\text{eff}}/\sigma_{ii,0}^{\text{eff}} \; \text{[-]}", xlabelsize = 18, ylabelsize = 18)

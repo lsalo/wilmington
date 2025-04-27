@@ -202,7 +202,7 @@ id_nodes_bas = filter(x -> !(x in id_nodes_sed), id_nodes_bas) # nodes at baseme
 nodes_bas = nodes_inp[id_nodes_bas, :]
 
 # Stress conditions
-a_phi = 1.75
+a_phi = 1.5
 mu = [0.3, 0.6]                         # sedimentary section, basement
 ratio_s1s3 = ((mu.^2 .+1).^0.5 .+ mu).^2  
 A  = a_phi .+ (-a_phi .+1)./ratio_s1s3 .-2
@@ -286,7 +286,7 @@ scatter!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, mar
 scatter!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\sigma_{yy}")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -550)
-text!(ax, -10, 11, text=L"A_\phi = 1.75", fontsize = 16)
+text!(ax, -10, 11, text=L"A_\phi = 1.5", fontsize = 16)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
 #save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
