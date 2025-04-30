@@ -116,12 +116,13 @@ else
 end
 
 
-# 3. ELEMENT CENTROIDS AND ASSIGN STRESS (HOMOGENEOUS STRESS STATE)
+# 3. ELEMENT CENTROIDS
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 elements_all = vcat(elements_inp[1:end-1]...)
 centroids = get_element_centroids_inp(elements_all, nodes_inp)
 
+# ASSIGN STRESS (HOMOGENEOUS STRESS STATE)
 # Assign stress based on depth: tension postivie
 # ABAQUS coordinate system: s11 // x, s22 // y, s33 // z
 z = centroids[:, end]
@@ -180,7 +181,7 @@ else
     error("Regime not recognized")
 end
 
-# 4. ELEMENT CENTROIDS AND ASSIGN STRESS (HETEROG. STRESS STATE, varying mobilized \mu)
+# 4. ASSIGN STRESS (HETEROG. strike-slip stress state, varying mobilized \mu and A_phi)
 z = centroids[:, end]
 t = zeros(length(z))
 names_sed = ["Ranger", "BottomRanger", "Pico", "AquiferFootwall", "OverburdenPico", "OverburdenCenterSouth", "OverburdenCenterNorth", "OverburdenHangingWall", "OverburdenRight", "OverburdenLeft"]
@@ -202,7 +203,7 @@ id_nodes_bas = filter(x -> !(x in id_nodes_sed), id_nodes_bas) # nodes at baseme
 nodes_bas = nodes_inp[id_nodes_bas, :]
 
 # Stress conditions
-a_phi = 1.5
+a_phi = [1.25, 1.75]                    # sedimentary section, basement
 mu = [0.3, 0.6]                         # sedimentary section, basement
 ratio_s1s3 = ((mu.^2 .+1).^0.5 .+ mu).^2  
 A  = a_phi .+ (-a_phi .+1)./ratio_s1s3 .-2
@@ -246,9 +247,9 @@ elseif regime == "normal"   # normal, s11 = szz, s22 = sxx, s33 = syy
 elseif regime == "strike-slip" # strike-slip, s11 = sxx, s22 = szz, s33 = syy
     stress_out = hcat(centroids[:,1], s1 .+ p, s3 .+ p, s2 .+ p, t, t, t)
     #writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_aphi", a_phi, ".inp"]), stress_out, ',')
-    writedlm(join([dir_out, "initial_stress_rotated_sed_mu0.3_bas_mu0.6_aphi", a_phi, ".inp"]), stress_out, ',')
+    writedlm(join([dir_out, "initial_stress_rotated_sed_mu", mu[1], "_aphi", a_phi[1], "_bas_mu", mu[2], "_aphi", a_phi[2], ".inp"]), stress_out, ',')
     #fnp = join(["peff_ini_nod_aphi", a_phi, ".inp"])
-    fnp = join(["peff_ini_nod_aphi", a_phi, "_sed_mu0.3_bas_mu0.6.inp"])
+    fnp = join(["peff_ini_nod_", "sed_mu", mu[1], "_aphi", a_phi[1], "_bas_mu", mu[2], "_aphi", a_phi[2], ".inp"])
 end
 writedlm(join([dir_out, fnp]), hcat(nodes_inp[:, 1], map(x -> @sprintf("%.2f", x), peff_ini_nod)), ",\t")
 
@@ -279,14 +280,14 @@ f = Figure(size=(500, 400))
 ax = Axis(f[1, 1], xlabel = L"\text{Stress [MPa]}", ylabel = L"\text{Depth [km]}", xlabelsize = 16, ylabelsize = 16, xticks=[0, -100, -200, -300, -400, -500, -600], yticks=[0, 2.5, 5, 7.5, 10, 12.5, 15])
 poly!(ax, Point2f.([0, -600, -600, 0, 0], [15, 15, 2.9, 2.9, 15]), color = RGBAf(0.8, 0.8, 0.8, 0.5))
 lines!(ax, [-600, 0], [2.9, 2.9], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.75, linestyle = :solid)
-text!(ax, -300, 2.0, text=L"\text{Sediments, mobilized } \mu=0.3", fontsize=14, color = :black)
-text!(ax, -300, 5.0, text=L"\text{Basement, mobilized } \mu=0.6", fontsize=14, color = :black)
+text!(ax, -250, 2.0, text=L"\text{Sediments, mob. } \mu=0.3 \text{, } A_\phi=1.25", fontsize=14, color = :black)
+text!(ax, -250, 5.0, text=L"\text{Basement, mob. } \mu=0.6 \text{, } A_\phi=1.75", fontsize=14, color = :black)
 scatter!(ax, s1[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\sigma_{xx}")
 scatter!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_{zz}")
 scatter!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\sigma_{yy}")
 ylims!(ax, 15, 0)
 xlims!(ax, 0, -550)
-text!(ax, -10, 11, text=L"A_\phi = 1.5", fontsize = 16)
+#text!(ax, -10, 11, text=L"A_\phi = 1.5", fontsize = 16)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
 #save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
