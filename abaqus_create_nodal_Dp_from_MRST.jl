@@ -30,11 +30,11 @@ dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
 fn_G    = "wilmington_ranger_G_withGeometry.mat"
-dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fT0_Inj0.5-0.8/result_data/1936_1975/"
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fT0_Inj0.5-0.8/result_data/dp_for_abaqus_1936_1975/"
+dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/1936_2020/"
+dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_2020/"
 fn_p    = "states_p_Pa.mat"
 fn_t    = "states_t_s.mat"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800_DBHP5_BCpvMult_fT0_Inj0.5-0.8/"  
+figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
 
 # Connectivity from .inp file (Abaqus grid)
 nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
@@ -91,7 +91,7 @@ nodal_dp_inp_plot[:,2:end] = nodal_dp_inp[:,2:end]
 nodal_dp_inp_plot = sortslices(nodal_dp_inp_plot, dims=1)  
 
 # put variables in vector containers
-t_id = 468
+t_id = 800
 coords_map = Vector{}(undef, 1)
 cells_nodes_map_plot = Vector{}(undef, 1)
 cells_values_nodes = Vector{}(undef, 1)
