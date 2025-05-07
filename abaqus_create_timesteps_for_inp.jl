@@ -65,7 +65,7 @@ open(fileNameToSave, "w") do f
             *Field, variable=$p_variable_num
             *Include, input=../$dirName/$fileName
             *Controls, analysis=discontinuous
-            *Restart, WRITE
+            *Restart, write, frequency=1
             *end step
             **
             """
