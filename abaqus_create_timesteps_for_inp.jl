@@ -17,23 +17,25 @@ dir_out = "C:/Users/lsalo/julia/output/wilmington/"
 # Write timestep info
 fileNames=readdir(dir_p_abq)
 dirName = "nodal_dp_1936_to_2020"
-fileNameToSave=dir_out*"tsteps_1936_to_2020_plastic_mdpcm_conv.inp"
+fileNameToSave=dir_out*"tsteps_6m_1936_to_2020_plastic_mdpcm_conv.inp"
 #fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
+tstep_ini = 6
+tstep_freq = 6
 p_variable_num = 2
 tstep_conv = 300
 open(fileNameToSave, "w") do f
     str = ""
     tstep_size_s = 2629746  # from mrst: year/12
     t_inc_max_s = tstep_size_s
-    for (i, fileName) in enumerate(fileNames)
-        stepNumber=i
+    i = tstep_ini
+    for fileName in fileNames[i:tstep_freq:end]
 
         # Note: triple quotes for multiline strings, otherwise it will be interpreted as character
         if i <= tstep_conv
             inc = 1000
             t_inc_ini_s = 3600*24*5 # 5 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
+            str = """*step, name=step_$i, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -46,7 +48,7 @@ open(fileNameToSave, "w") do f
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
+            str = """*step, name=step_$i, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -59,7 +61,7 @@ open(fileNameToSave, "w") do f
             inc = 1000
             t_inc_ini_s = 3600*24*1 # 1 days
             t_inc_min_s = 0
-            str = """*step, name=step_$stepNumber, inc=$inc, unsymm=yes
+            str = """*step, name=step_$i, inc=$inc, unsymm=yes
             *STATIC, stabilize
             $t_inc_ini_s, $tstep_size_s, $t_inc_min_s, $t_inc_max_s
             *Field, variable=$p_variable_num
@@ -72,6 +74,7 @@ open(fileNameToSave, "w") do f
         end
 
         write(f, str)
+        i += tstep_freq
     end
 end
 
