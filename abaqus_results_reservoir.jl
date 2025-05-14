@@ -16,7 +16,7 @@ using DelimitedFiles
 using CairoMakie
 CairoMakie.activate!()
 
-@everywhere  lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+@everywhere  lib_dir = "../jl-tools/"
 @everywhere include(joinpath(lib_dir, "modules", "arrayOps.jl"))
 @everywhere using .ArrayOps
 include(joinpath(lib_dir, "modules", "abaqus.jl"))
@@ -26,22 +26,29 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-103"
-abaqus_dir_el = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-103/extracted/S/ENTIRE_DOMAIN/"
+sim_name = "plastic-107"
+platform = Sys.ARCH
+if platform == :x86_64      # GRS3 Windows server
+    sim_dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
+    dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+    dir_in = "C:/Users/lsalo/julia/output/wilmington/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
+elseif platform == :aarch64  # MBP
+    sim_dir = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/"
+    dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/grids/"
+    dir_in = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/"
+    figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
+end
+abaqus_dir_el = sim_dir * sim_name * "/extracted/S/ENTIRE_DOMAIN/"
+abaqus_dir_nod = sim_dir * sim_name * "/extracted/U/TOPRANGERSURFACE/"
+abaqus_dir_nod2 = sim_dir * sim_name * "/extracted/S/TOPRANGERSURFACE/"
+abaqus_dir_nod3 = sim_dir * sim_name * "/extracted/U/TOPBC/"
 abaqus_fn_el = sort(readdir(abaqus_dir_el), by=sort_steps)
-
-abaqus_dir_nod = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-103/extracted/U/TOPRANGERSURFACE/"
 abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
-abaqus_dir_nod2 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-103/extracted/S/TOPRANGERSURFACE/"
 abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
-abaqus_dir_nod3 = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-103/extracted/U/TOPBC/"
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
-dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-dir_in = "C:/Users/lsalo/julia/output/wilmington/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
-
 tn = 470
 tstep = 2629746 / 31556952
 t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=470)))
@@ -128,7 +135,7 @@ regime = "strike-slip"
 # Cap model parameters
 d = 1e-3        # MPa
 b = 55          # 55, 58.6, 52.41 deg
-R = 0.2         # 1.227
+R = 0.8         # 1.227
 W = 0.27        # [-]
 D = 0.7143      # 1/kbar
 e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
@@ -163,7 +170,8 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.1*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-97
 #p_b = 1.05*p_eff_ini_el .+ 0.5*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-99, plastic-100, plastic-102
 #p_b = 1.05*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-101
-p_b = 1.05*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-103
+#p_b = 1.05*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-103
+p_b = 1.17*p_eff_ini_el .+ 0.27*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-107
 
 # Shear envelope and cap
 e_p0 = 0
@@ -177,7 +185,7 @@ if node_select == "max_subsidence"
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
     #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)     # normal regime  
     #q_Fc = vcat(Vector{}(0:1:19), 19.02:.02:19.4)    # strike-slip regime
-    q_Fc = vcat(Vector{}(0:1:13), 13.02:.02:14.0)    # strike-slip regime
+    q_Fc = vcat(Vector{}(0:1:8), 8.02:.01:9.37)    # strike-slip regime
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -199,8 +207,8 @@ elseif regime == "normal"
     xlims!(ax, 0, 16)
     ylims!(ax, 0, 16)
 elseif regime == "strike-slip"
-    xlims!(ax, 0, 30)
-    ylims!(ax, 0, 30)
+    xlims!(ax, 0, 16)
+    ylims!(ax, 0, 16)
 end
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 cbar = Colorbar(f[1, 2], sc1, label=L"\text{Year}", labelsize=12, width=12, ticklabelsize=12)
@@ -233,17 +241,17 @@ elseif regime == "normal"
         ylims!(ax, -1, 5)
     end
 elseif regime == "strike-slip"
-    ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=10:2:24, yticks=-10:2:0)
+    ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=0:2:16, yticks=-10:2:0)
     sc1 = scatter!(ax, p_eff/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \text{, top Ranger}")
     if node_select == "max_subsidence"
-        xlims!(ax, 10, 24)
+        xlims!(ax, 0, 16)
         ylims!(ax, -10, 0)
     elseif node_select == "max_rebound"
         xlims!(ax, 5, 15)
         ylims!(ax, -1, 5)
     end
 end
-axislegend(position = :rb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
+axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
 #save(join([figs_dir, "stress_path_ranger_", node_select, "_", sim_name, ".pdf"]), f, pt_per_unit = 1)
 
@@ -293,4 +301,4 @@ ylims!(ax, -10, 0)
 #ylims!(ax, 0, 10)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-#save(join([figs_dir, "u3_surface_plastic-89.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "u3_surface_", sim_name, ".pdf"]), f, pt_per_unit = 1)
