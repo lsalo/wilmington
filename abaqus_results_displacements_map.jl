@@ -17,8 +17,8 @@ using LaTeXStrings
 using DelimitedFiles
 using Statistics
 
-lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-#lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
+#lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
 includet(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
 includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
@@ -27,12 +27,16 @@ includet(joinpath(lib_dir, "modules", "MakiePolyPlot.jl"))
 using .MakiePolyPlot
 
 # Directories
-dir_inp     = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
-dir_abaqus  = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-88/extracted/U/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
-#dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/grids/"
-#dir_abaqus = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/output/elastic/extracted/S/"
-#figs_dir = "/Users/lluis/Documents/julia/graphics/figs/wilmington/"
+platform = Sys.ARCH
+if platform == :x86_64 
+    dir_inp     = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+    dir_abaqus  = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-88/extracted/U/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
+elseif platform == :aarch64
+    dir_inp     = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/grids/"
+    dir_abaqus  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/plastic-107/extracted/U/"
+    figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
+end
 
 
 # 1. Nodal data (connectivity and displacements)
@@ -42,7 +46,7 @@ fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 nsets_to_export = ["Wilmington"]
 #nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
 #nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
-nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
+nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral", false)
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
 # Simulation data: get values at the nodes from abaqus
