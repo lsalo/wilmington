@@ -36,11 +36,12 @@ elseif platform == :aarch64
     dir_inp     = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/grids/"
     dir_abaqus  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/plastic-107/extracted/U/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
+    data_dir = "/Users/lluis/Documents/julia/wilmington/data/"
 end
 
 
 # 1. Nodal data (connectivity and displacements)
-# Get connectivity fron .inp grid: We need to get the *face* connectivity of node sets
+# Get connectivity from .inp grid: We need to get the *face* connectivity of node sets
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 #nsets_to_export = ["TopBC", "TopRangerSurface"]
 nsets_to_export = ["Wilmington"]
@@ -76,6 +77,10 @@ for elset in eachindex(elsets_to_export)
     push!(nodal_disp, nodal_disp_el[elset])
 end
 
+# Not rotated
+fn_inp2  = "WilmingtonMesh_AllFaults_Coarse.inp" # Not rotated grid, with actual UTM coords (zone 11)
+nodes_inp2, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp2, "tetrahedral", false)
+
 # 3. Plot
 # For poly we need: 1) nodal coords, 2) nodal values, 3) face connectivity, starting at 1
 nsets = length(nsets_to_export)+length(elsets_to_export)
@@ -84,7 +89,7 @@ vals_nodes = Vector{}(undef, nsets)
 face_list_map = Vector{}(undef, nsets)
 for set in 1:nsets
     unique_ids = sort(unique(face_list[set]))      
-    coords_map[set] = nodes_inp[in.(nodes_inp[:, 1], Ref(unique_ids)), 2:end]
+    coords_map[set] = nodes_inp2[in.(nodes_inp2[:, 1], Ref(unique_ids)), 2:end]
     nodal_disp_plot = sortslices(nodal_disp[set], dims=1, by=x->x[1])  
     vals_nodes[set] = nodal_disp_plot[:, end] # U3 [m]   
     face_list_map[set], _ = renumber_array_1_to_n(face_list[set])
@@ -93,5 +98,14 @@ end
 # Make plot
 labl = L"$u_z$ [m]"
 mycmap = cgrad(:lapaz)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.2*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-88_t468", target_dpi=400, target_size_in=(15,12))
-plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
+
+# Fig descriptor
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.2*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])), ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])), save_fig = false, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-107_t468", target_dpi=400, target_size_in=(15,12))
+
+#Line
+coast_data = readdlm(join([data_dir, "cal_outline.dat"]))
+cst = [coast_data[coast_data[:, 3] .== i, :] for i in 1:18] # third column is "category"
+coastline = [cst[6], cst[17], cst[18]]
+#coastline = [hcat(coastline[:, 2], coastline[:, 1], coastline[:, 3])]
+# Plotting
+plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor, line_data=coastline)
