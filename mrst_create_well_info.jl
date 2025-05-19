@@ -14,7 +14,10 @@ using StatsBase
 using Proj
 
 # Startup - modules by me
-
+#lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
+includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
+using .ArrayOps
 
 # ─────────────────────────────
 # ▶ DIRECTORIES AND DATA ◀
@@ -37,7 +40,7 @@ coord_inj = readdlm(join([dir_data, "/raw_flowrates/Injection/coord.dat"]), '\t'
 datum_name = "WGS84"
 
 # Define coordinate systems
-wgs84 = Proj.CRS("EPSG:4326")                             
+wgs84 = Proj.CRS("EPSG:4326")     # expects (lat, lon)       
 if datum_name == "WGS84"
     utm11_datum = Proj.CRS("EPSG:32611")    
 elseif datum_name == "NAD27"
@@ -46,4 +49,7 @@ end
 
 # Transform
 trans = Proj.Transformation(wgs84, utm11_datum)
-coord_inj_utm = trans.(eachrow(coord_inj))Y)
+coord_inj_filled = fill_zero_rows(coord_inj; method="nearest_average") 
+coord_inj_filled[:, [1, 2]] = coord_inj_filled[:, [2, 1]]   # swap lat and lon to agree with EPSG:4326
+coord_inj_utm = trans.(eachrow(coord_inj_filled))           # produces a vector of tuples
+
