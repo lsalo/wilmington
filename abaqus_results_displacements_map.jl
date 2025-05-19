@@ -1,5 +1,5 @@
 #=
-Script to compute fault tractions at wilmington
+Script to visualize displacements on grid at wilmington
 =#
 
 # Cd into current directory and activate the Julia environment in this directory
@@ -36,7 +36,7 @@ elseif platform == :aarch64
     dir_inp     = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/grids/"
     dir_abaqus  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/plastic-107/extracted/U/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
-    data_dir = "/Users/lluis/Documents/julia/wilmington/data/"
+    data_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/data/wilmington/"
 end
 
 
