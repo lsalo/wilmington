@@ -95,18 +95,74 @@ fn_G = "wilmington_ranger_G_withGeometry.mat"
 G = matread(join([dir_grid, fn_G]))["G"]
 centroids = G["cells"]["centroids"]
 
-# Space: consolidate injectors/producers in the same cell centroid
+# Space: consolidate injectors in the same cell centroid
 well_ids = find_ids_from_pairwise_distance(coord_inj_utm, centroids[:, 1:2])
 inj_monthly_m3_s_wid = Matrix{Union{Int, Float64}}(undef, length(well_ids), size(inj_monthly)[1]+1)
 inj_monthly_m3_s_wid[:, 1] = well_ids
 inj_monthly_m3_s_wid[:, 2:end] = transpose(inj_monthly_m3_s) # NOTE: columns are well numbers after transpose
 inj_monthly_m3_s_cid = reduce_matrix_with_repeated_ids(inj_monthly_m3_s_wid, "sum"; out_matrix_type="Int-Float") 
 
-# Time: Reduce number of timesteps if desired, and save to file
-if tstep_freq == 1
+# Consolidate producers in the same cell centroid
+well_ids = find_ids_from_pairwise_distance(coord_prod_utm, centroids[:, 1:2])
+prod_water_monthly_m3_s_wid = Matrix{Union{Int, Float64}}(undef, length(well_ids), size(inj_monthly)[1]+1)
+prod_water_monthly_m3_s_wid[:, 1] = well_ids
+prod_water_monthly_m3_s_wid[:, 2:end] = transpose(prod_water_monthly_m3_s) 
+prod_water_monthly_m3_s_cid = reduce_matrix_with_repeated_ids(prod_water_monthly_m3_s_wid, "sum"; out_matrix_type="Int-Float")
 
+prod_oil_monthly_m3_s_wid = Matrix{Union{Int, Float64}}(undef, length(well_ids), size(inj_monthly)[1]+1)
+prod_oil_monthly_m3_s_wid[:, 1] = well_ids
+prod_oil_monthly_m3_s_wid[:, 2:end] = transpose(prod_oil_monthly_m3_s)
+prod_oil_monthly_m3_s_cid = reduce_matrix_with_repeated_ids(prod_oil_monthly_m3_s_wid, "sum"; out_matrix_type="Int-Float")
+
+prod_gas_monthly_m3_s_wid = Matrix{Union{Int, Float64}}(undef, length(well_ids), size(inj_monthly)[1]+1)
+prod_gas_monthly_m3_s_wid[:, 1] = well_ids
+prod_gas_monthly_m3_s_wid[:, 2:end] = transpose(prod_gas_monthly_m3_s)
+prod_gas_monthly_m3_s_cid = reduce_matrix_with_repeated_ids(prod_gas_monthly_m3_s_wid, "sum"; out_matrix_type="Int-Float")
+
+# Recover final well ids
+wid_inj_mrst = inj_monthly_m3_s_cid[:, 1] 
+wid_prod_mrst = prod_water_monthly_m3_s_cid[:, 1]
+
+# Time: Reduce number of timesteps if desired, and save to file
+if tstep_freq == 1      # all timesteps, monthly
+    inj_fin_m3_s = inj_monthly_m3_s_cid
+    prod_water_fin_m3_s = prod_water_monthly_m3_s_cid
+    prod_oil_fin_m3_s = prod_oil_monthly_m3_s_cid
+    prod_gas_fin_m3_s = prod_gas_monthly_m3_s_cid
+else
+    nt = size(inj_monthly_m3_s_cid, 2) - 1
+    nt_new = Int(ceil(nt/tstep_freq))
+    inj_fin_m3_s = Matrix{Union{Int, Float64}}(undef, size(inj_monthly_m3_s_cid, 1), nt_new + 1)
+    inj_fin_m3_s[:, 1:2] = inj_monthly_m3_s_cid[:, 1:2] # well ids, 1936.0
+    inj_fin_m3_s[:, 3:end] = resample_matrix(inj_monthly_m3_s_cid[:, 3:end], tstep_freq) # resample the rest of the columns
+
+    prod_water_fin_m3_s = Matrix{Union{Int, Float64}}(undef, size(prod_water_monthly_m3_s_cid, 1), nt_new + 1)
+    prod_water_fin_m3_s[:, 1:2] = prod_water_monthly_m3_s_cid[:, 1:2] 
+    prod_water_fin_m3_s[:, 3:end] = resample_matrix(prod_water_monthly_m3_s_cid[:, 3:end], tstep_freq) 
+    prod_oil_fin_m3_s = Matrix{Union{Int, Float64}}(undef, size(prod_oil_monthly_m3_s_cid, 1), nt_new + 1) 
+    prod_oil_fin_m3_s[:, 1:2] = prod_oil_monthly_m3_s_cid[:, 1:2] 
+    prod_oil_fin_m3_s[:, 3:end] = resample_matrix(prod_oil_monthly_m3_s_cid[:, 3:end], tstep_freq) 
+    prod_gas_fin_m3_s = Matrix{Union{Int, Float64}}(undef, size(prod_gas_monthly_m3_s_cid, 1), nt_new + 1)
+    prod_gas_fin_m3_s[:, 1:2] = prod_gas_monthly_m3_s_cid[:, 1:2] 
+    prod_gas_fin_m3_s[:, 3:end] = resample_matrix(prod_gas_monthly_m3_s_cid[:, 3:end], tstep_freq) 
 end
 
+
+# ─────────────
+# ▶ SAVE DATA ◀
+#  ────────────
+save_data = false
+if save_data
+    if tstep_freq == 1;         tstep_str = "monthly"
+    elseif tstep_freq == 2;     tstep_str = "bimonthly"
+    elseif tstep_freq == 3;     tstep_str = "trimester"
+    elseif tstep_freq == 6;     tstep_str = "semiannual"
+    end
+    writedlm(join([dir_out, "inj_m3_s_mrst_", tstep_str, ".dat"]), inj_fin_m3_s, '\t') 
+    writedlm(join([dir_out, "prod_water_m3_s_mrst_", tstep_str, ".dat"]), prod_water_fin_m3_s, '\t')
+    writedlm(join([dir_out, "prod_oil_m3_s_mrst_", tstep_str, ".dat"]), prod_oil_fin_m3_s, '\t')
+    writedlm(join([dir_out, "prod_gas_m3_s_mrst_", tstep_str, ".dat"]), prod_gas_fin_m3_s, '\t')    
+end
 
 # ───────────────────────
 # ▶ FAST VISUALIZATIONS ◀
@@ -122,8 +178,10 @@ coastline = [cst[6], cst[17], cst[18]]
 f = Figure(size=(600, 500))
 ax = Axis(f[1, 1], xlabel = L"x \text{ [m], UTM 11N}", ylabel = L"y \text{ [m], UTM 11N}", xlabelsize = 16, ylabelsize = 16)
 scatter!(ax, centroids[:, 1], centroids[:, 2], markersize = 0.5, color = :black, label=L"\text{Ranger cell centroids}")
-scatter!(ax, coord_prod_utm[:, 1], coord_prod_utm[:, 2], markersize = 2, color = :red, label=L"\text{Producers}")
-scatter!(ax, coord_inj_utm[:, 1], coord_inj_utm[:, 2], markersize = 2, color = :blue, label=L"\text{Injectors}")
+#scatter!(ax, coord_prod_utm[:, 1], coord_prod_utm[:, 2], markersize = 2, color = :red, label=L"\text{Producers}")
+#scatter!(ax, coord_inj_utm[:, 1], coord_inj_utm[:, 2], markersize = 2, color = :blue, label=L"\text{Injectors}")
+scatter!(ax, centroids[wid_prod_mrst, 1], centroids[wid_prod_mrst, 2], markersize = 2, color = :red, label=L"\text{Producers}")
+scatter!(ax, centroids[wid_inj_mrst, 1], centroids[wid_inj_mrst, 2], markersize = 2, color = :blue, label=L"\text{Injectors}")
 count = 1
 for line in coastline
     if count ==1
@@ -137,4 +195,5 @@ xlims!(ax, 3.78e5, 4.0e5)
 ylims!(ax, 3.728e6, 3.752e6)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
-save(join([dir_figs, "cell_centroids_and_wellsWGS84.pdf"]), f, pt_per_unit = 1)
+#save(join([dir_figs, "cell_centroids_and_wellsWGS84.pdf"]), f, pt_per_unit = 1)
+save(join([dir_figs, "cell_centroids_and_wells_for_MRST_WGS84.pdf"]), f, pt_per_unit = 1)
