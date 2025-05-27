@@ -48,6 +48,7 @@ prod_water_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/waterPro
 prod_oil_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/oilProduction.dat"]), '\t', Float64, '\n') # tsteps x wells
 prod_gas_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/gasProduction.dat"]), '\t', Float64, '\n') # tsteps x wells
 
+time = readdlm(join([dir_data, "/raw_flowrates/Injection/time.dat"]), '\t', Float64, '\n') # time 
 
 # ─────────────────────────────
 # ▶ CONVERT TO UTM COORDINATES ◀
@@ -129,6 +130,7 @@ if tstep_freq == 1      # all timesteps, monthly
     prod_water_fin_m3_s = prod_water_monthly_m3_s_cid
     prod_oil_fin_m3_s = prod_oil_monthly_m3_s_cid
     prod_gas_fin_m3_s = prod_gas_monthly_m3_s_cid
+    time_fin = time 
 else
     nt = size(inj_monthly_m3_s_cid, 2) - 1
     nt_new = Int(ceil(nt/tstep_freq))
@@ -145,6 +147,8 @@ else
     prod_gas_fin_m3_s = Matrix{Union{Int, Float64}}(undef, size(prod_gas_monthly_m3_s_cid, 1), nt_new + 1)
     prod_gas_fin_m3_s[:, 1:2] = prod_gas_monthly_m3_s_cid[:, 1:2] 
     prod_gas_fin_m3_s[:, 3:end] = resample_matrix(prod_gas_monthly_m3_s_cid[:, 3:end], tstep_freq) 
+
+    time_fin = time[1:tstep_freq:end] # resample time vector
 end
 
 
@@ -161,7 +165,8 @@ if save_data
     writedlm(join([dir_out, "inj_m3_s_mrst_", tstep_str, ".dat"]), inj_fin_m3_s, '\t') 
     writedlm(join([dir_out, "prod_water_m3_s_mrst_", tstep_str, ".dat"]), prod_water_fin_m3_s, '\t')
     writedlm(join([dir_out, "prod_oil_m3_s_mrst_", tstep_str, ".dat"]), prod_oil_fin_m3_s, '\t')
-    writedlm(join([dir_out, "prod_gas_m3_s_mrst_", tstep_str, ".dat"]), prod_gas_fin_m3_s, '\t')    
+    writedlm(join([dir_out, "prod_gas_m3_s_mrst_", tstep_str, ".dat"]), prod_gas_fin_m3_s, '\t') 
+    writedlm(join([dir_out, "time_mrst_", tstep_str, ".dat"]), time_fin, '\t')   
 end
 
 # ───────────────────────
