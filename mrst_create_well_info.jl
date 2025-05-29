@@ -42,11 +42,22 @@ tstep_freq = 3 # frequency of timesteps to save (1 = all (monthly), 2 = bi-month
 # Read well info
 coord_inj = readdlm(join([dir_data, "/raw_flowrates/Injection/coord.dat"]), '\t', Float64, '\n')
 inj_monthly = readdlm(join([dir_data, "/raw_flowrates/Injection/waterInjection.dat"]), '\t', Float64, '\n') # tsteps x wells
+inj_total = vec(sum(inj_monthly, dims=1)) # total injection per well, in BBL
 
 coord_prod = readdlm(join([dir_data, "/raw_flowrates/Production/coord.dat"]), '\t', Float64, '\n')
 prod_water_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/waterProduction.dat"]), '\t', Float64, '\n') # tsteps x wells
 prod_oil_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/oilProduction.dat"]), '\t', Float64, '\n') # tsteps x wells
 prod_gas_monthly = readdlm(join([dir_data, "/raw_flowrates/Production/gasProduction.dat"]), '\t', Float64, '\n') # tsteps x wells
+prod_total = vec(sum(prod_water_monthly + prod_oil_monthly + prod_gas_monthly, dims=1)) # total production per well, in BBL
+
+# Filter out wells (and coords) with no injection or production
+inj_monthly = inj_monthly[:, inj_total .> 0] 
+coord_inj = coord_inj[inj_total .> 0, :]
+
+prod_water_monthly = prod_water_monthly[:, prod_total .> 0]
+prod_oil_monthly = prod_oil_monthly[:, prod_total .> 0]  
+prod_gas_monthly = prod_gas_monthly[:, prod_total .> 0]      
+coord_prod = coord_prod[prod_total .> 0, :]
 
 time = readdlm(join([dir_data, "/raw_flowrates/Injection/time.dat"]), '\t', Float64, '\n') # time 
 
