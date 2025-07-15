@@ -17,7 +17,25 @@ using Colors
 using ColorSchemes
 using LaTeXStrings
 
-lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+# Directories
+if Sys.isapple()
+    lib_dir ="/Users/lluis/Documents/julia/jl-tools/"
+    dir_inp ="/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/abaqus/grids/"
+    dir_G   = "/Users/lluis/Documents/MATLAB/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
+    dir_p   = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/matlab/sim_data/wilmington/JS_LS_lowRs_props_owc1800_fTmultPermBot_BCpvMult_maxDBHPInf_minBHP0MPa_dtTrimester_t177/result_data/"
+    dir_p_abq = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/output/wilmington/output_data/from_mrst/dp_for_abaqus/JS_LS_lowRs_props_owc1800_fTmultPermBot_BCpvMult_maxDBHPInf_minBHP0MPa_dtTrimester_t177/"
+    figs_dir = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/graphics/wilmington/wrr_article_2025/draft/"  
+
+elseif Sys.iswindows()
+    lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+    dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+    dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
+    dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/1936_2020/"
+    dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_2020/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
+end
+
+# My packages
 includet(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
 includet(joinpath(lib_dir, "modules", "mrst.jl"))
@@ -25,16 +43,11 @@ using .Mrst
 includet(joinpath(lib_dir, "modules", "makiePolyPlot.jl"))
 using .MakiePolyPlot
 
-# Directories
-dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+# Filenames
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-dir_G   = "C:/Users/lsalo/matlab/mrst-dev/mrst-ls/ls-proj/wilmington/grid/"
 fn_G    = "wilmington_ranger_G_withGeometry.mat"
-dir_p   = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/1936_2020/"
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_2020/"
 fn_p    = "states_p_Pa.mat"
 fn_t    = "states_t_s.mat"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/"  
 
 # Connectivity from .inp file (Abaqus grid)
 nodes_inp, _, _, _, _ = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
@@ -47,7 +60,8 @@ nodes_to_cells, faces_nodes = map_nodes_to_cells(G, n2fn, f2cn)
 
 # Get nodal pressures and compute Dp
 # This needs to be done at each timestep, and then compute Dp
-t = 1936 .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
+dty = 0.25  # timestep in years
+t = 1936 - dty .+ matread(join([dir_p fn_t]))["t"]./31556952  # convert to year
 p = matread(join([dir_p fn_p]))["p"]
 p0 = matread(join([dir_p "state0_p_Pa.mat"]))["p0"]
 #dp = p[:, 1:end] - p0  # dp from previous tstep (not from hydrostatic pressure)
@@ -91,7 +105,7 @@ nodal_dp_inp_plot[:,2:end] = nodal_dp_inp[:,2:end]
 nodal_dp_inp_plot = sortslices(nodal_dp_inp_plot, dims=1)  
 
 # put variables in vector containers
-t_id = 800
+t_id = 338
 coords_map = Vector{}(undef, 1)
 cells_nodes_map_plot = Vector{}(undef, 1)
 cells_values_nodes = Vector{}(undef, 1)

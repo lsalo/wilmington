@@ -11,18 +11,20 @@ using Revise
 println("Finished loading packages")
 
 # Filename and Directories
-dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_2020/"
-dir_out = "C:/Users/lsalo/julia/output/wilmington/"
+#dir_p_abq = "C:/Users/lsalo/matlab/sim_data/mrst/wilmington/liquidRate_JS_LS_lowRsprops_owc1800/result_data/dp_for_abaqus_1936_2020/"
+#dir_out = "C:/Users/lsalo/julia/output/wilmington/"
+dir_p_abq = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/output/wilmington/output_data/from_mrst/dp_for_abaqus/JS_LS_lowRs_props_owc1800_fTmultPermBot_BCpvMult_maxDBHPInf_minBHP0MPa_dtTrimester_t177/"
+dir_out = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/output/wilmington/input_data/"
 
 # Write timestep info
 fileNames=readdir(dir_p_abq)
-dirName = "nodal_dp_1936_to_2020"
-fileNameToSave=dir_out*"tsteps_6m_1936_to_2020_plastic_mdpcm_conv.inp"
+dirName = "nodal_dp_1936_to_2020_tri"
+fileNameToSave=dir_out*"tsteps_1y_1936_to_2020_plastic_mdpcm_conv.inp"
 #fileNameToSave=dir_out*"tsteps_1936_to_1975_plastic_camclay.inp"
-tstep_ini = 6
-tstep_freq = 6
+tstep_ini = 1
+tstep_freq = 4
 p_variable_num = 2
-tstep_conv = 300
+tstep_conv = 100
 open(fileNameToSave, "w") do f
     str = ""
     tstep_size_s = 2629746  # from mrst: year/12
