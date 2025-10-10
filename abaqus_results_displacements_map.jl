@@ -17,8 +17,7 @@ using LaTeXStrings
 using DelimitedFiles
 using Statistics
 
-#lib_dir = "C:/Users/lsalo/julia/jl-tools/"
-lib_dir = "/Users/lluis/Documents/julia/jl-tools/"
+lib_dir = "../jl-tools/"
 includet(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
 includet(joinpath(lib_dir, "modules", "arrayOps.jl"))
@@ -27,17 +26,19 @@ includet(joinpath(lib_dir, "modules", "MakiePolyPlot.jl"))
 using .MakiePolyPlot
 
 # Directories
+sim_name = "plastic-116"
 platform = Sys.ARCH
 if platform == :x86_64 
-    dir_inp     = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
-    dir_abaqus  = "C:/Users/lsalo/abaqus/simulation_data/wilmington/plastic-88/extracted/U/"
+    dir_inp  = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+    sim_dir  = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
     figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
 elseif platform == :aarch64
-    dir_inp     = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/grids/"
-    dir_abaqus  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/plastic-107/extracted/U/"
+    dir_inp  = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/AbaqusGrids/"
+    sim_dir  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
     data_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/data/wilmington/"
 end
+sim_dir = sim_dir * sim_name * "/extracted/U/"
 
 
 # 1. Nodal data (connectivity and displacements)
@@ -52,9 +53,12 @@ face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset
 
 # Simulation data: get values at the nodes from abaqus
 nodal_disp = Vector{}(undef, length(nsets_to_export))
-tstep = "step_468"
+#tstep = "step_468"
+#tstep = "step_89"
+#tstep = "step_157"
+tstep = "step_337"
 for nset in eachindex(nsets_to_export)
-    data = readdlm(join([dir_abaqus, nsets_to_export[nset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
+    data = readdlm(join([sim_dir, nsets_to_export[nset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
     nodal_disp[nset] = Matrix{Union{Int,Float64}}(data)
     nodal_disp[nset][:, 1] .= Int.(nodal_disp[nset][:, 1])
 end
@@ -67,7 +71,7 @@ face_list_el = get_face_connectivity_elsets(elsets_to_export, elset_names_inp, e
 
 nodal_disp_el = Vector{}(undef, length(elsets_to_export))
 for elset in eachindex(elsets_to_export)
-    data = readdlm(join([dir_abaqus, elsets_to_export[elset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
+    data = readdlm(join([sim_dir, elsets_to_export[elset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
     nodal_disp_el[elset] = Matrix{Union{Int,Float64}}(data)
     nodal_disp_el[elset][:, 1] .= Int.(nodal_disp_el[elset][:, 1])
 end
@@ -100,7 +104,9 @@ labl = L"$u_z$ [m]"
 mycmap = cgrad(:lapaz)
 
 # Fig descriptor
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.2*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])), ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])), save_fig = false, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-107_t468", target_dpi=400, target_size_in=(15,12))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.6*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])), ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])), save_fig = true, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-116_t337", target_dpi=400, target_size_in=(15,12))
+
+plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
 
 #Line
 coast_data = readdlm(join([data_dir, "cal_outline.dat"]))

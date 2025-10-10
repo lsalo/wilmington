@@ -26,7 +26,7 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-107"
+sim_name = "plastic-120"
 platform = Sys.ARCH
 if platform == :x86_64      # GRS3 Windows server
     sim_dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
@@ -36,7 +36,7 @@ if platform == :x86_64      # GRS3 Windows server
 elseif platform == :aarch64  # MBP
     sim_dir = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/"
     dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/grids/"
-    dir_in = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/"
+    dir_in = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/input_data/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
 end
 abaqus_dir_el = sim_dir * sim_name * "/extracted/S/ENTIRE_DOMAIN/"
@@ -49,12 +49,15 @@ abaqus_fn_nod2 = sort(readdir(abaqus_dir_nod2), by=sort_steps)
 abaqus_fn_nod3 = sort(readdir(abaqus_dir_nod3), by=sort_steps)
 
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-tn = 470
-tstep = 2629746 / 31556952
-t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=470)))
-t = t[vcat(1, 13:12:length(t))]
+#tn = 470
+#tstep = 2629746 / 31556952
+#t = 1936 .+ vcat(0, cumsum(repeat([tstep], inner=470)))
+#t = t[vcat(1, 13:12:length(t))]
+tn = 85
+tstep = 1
+t = 1936 .+ vcat(-1, 0, cumsum(repeat([tstep], inner=tn)))
+#node_select = "max_rebound"
 node_select = "max_subsidence"
-
 
 ## Get nodal data
 # Max diplacement node at top Ranger surface
@@ -73,7 +76,7 @@ for i in 1:n
     u_z[i] = file[id_u, end]
 end
 
-# Max displacement at the surface (may not be the same node in all steps)
+# Min/Max displacement at the surface (may not be the same node in all steps)
 u_z_top = Vector{Float32}(undef, n)
 for i in 1:n
     file = readdlm(join([abaqus_dir_nod3, abaqus_fn_nod3[i]]), ',', skipstart=1)
@@ -162,16 +165,20 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.08*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-75
 #p_b = 1.41*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-75
 #p_b = 1.02*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-78
-#p_b = 1.35*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-80
-#p_b = 1.35*p_eff_ini_el .+ 0.6*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-84
-#p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-85, plastic-88, plastic-89
-#p_b = 1.2*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-92
-#p_b = 1.12*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)  # plastic-94
-#p_b = 1.1*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-97
-#p_b = 1.05*p_eff_ini_el .+ 0.5*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-99, plastic-100, plastic-102
-#p_b = 1.05*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-101
-#p_b = 1.05*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-103
-p_b = 1.17*p_eff_ini_el .+ 0.27*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-107
+#p_b = 1.35*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-80
+#p_b = 1.35*p_eff_ini_el .+ 0.6*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-84
+#p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-85, plastic-88, plastic-89
+#p_b = 1.2*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-92
+#p_b = 1.12*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)    # plastic-94
+#p_b = 1.1*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-97
+#p_b = 1.05*p_eff_ini_el .+ 0.5*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-99, plastic-100, plastic-102
+#p_b = 1.05*p_eff_ini_el .+ 0.1*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-101
+#p_b = 1.05*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)    # plastic-103
+#p_b = 1.17*p_eff_ini_el .+ 0.27*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)    # plastic-107
+#p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-112
+#p_b = 1.35*p_eff_ini_el .+ 0.9*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-114, plastic-115
+#p_b = 1.35*p_eff_ini_el .+ 0.95*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)    # plastic-116
+p_b = 1.17*p_eff_ini_el .+ 0.47*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-120
 
 # Shear envelope and cap
 e_p0 = 0
@@ -184,8 +191,8 @@ if node_select == "max_subsidence"
     #q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
     #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)     # normal regime  
-    #q_Fc = vcat(Vector{}(0:1:19), 19.02:.02:19.4)    # strike-slip regime
-    q_Fc = vcat(Vector{}(0:1:8), 8.02:.01:9.37)    # strike-slip regime
+    #q_Fc = vcat(Vector{}(0:1:16), 16.02:.02:16.4)    # strike-slip regime
+    q_Fc = vcat(Vector{}(0:1:7), 7.01:0.01:9, 9:.001:9.355)    # strike-slip regime
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -199,7 +206,7 @@ f = Figure(size=(800, 350))
 ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
 ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"F_\text{s},\; \beta=55.0^\circ")
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :solid, label=L"F_\text{c}^0")
-sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 8, color=t, colormap=:rainbow, label=L"\text{Ranger element}")
+sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 6, color=t, colormap=:rainbow, label=L"\text{Ranger element}")
 if regime == "reverse"
     xlims!(ax, 0, 45)
     ylims!(ax, 0, 45)
@@ -232,7 +239,7 @@ if regime == "reverse"
     end
 elseif regime == "normal"
     ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=0:2:16, yticks=-10:2:0)
-    sc1 = scatter!(ax, p_eff/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \text{, top Ranger}")
+    sc1 = scatter!(ax, p_eff/1e6, u_z, markersize = 6, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \text{, top Ranger}")
     if node_select == "max_subsidence"
         xlims!(ax, 0, 16)
         ylims!(ax, -10, 0)
@@ -266,21 +273,22 @@ s_zz_norm = s_zz ./ s[1][3]
 f = Figure(size=(700, 300))
 ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\text{eff}} \; \text{[MPa]}", xlabelsize = 18, ylabelsize = 18)
 lines!(ax, [1958, 1958], [-50, 0.0], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.0, linestyle = :dash)
-ln1 = lines!(ax, t, s_xx ./ 1e6, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{xx}")
-ln2 = lines!(ax, t, s_yy ./ 1e6, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{yy}")
-ln3 = lines!(ax, t, s_zz ./ 1e6, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\sigma_{zz}")
+ln1 = lines!(ax, t[2:end], s_xx ./ 1e6, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{xx}")
+ln2 = lines!(ax, t[2:end], s_yy ./ 1e6, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{yy}")
+ln3 = lines!(ax, t[2:end], s_zz ./ 1e6, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\sigma_{zz}")
 text!(ax, L"\text{Depletion}", position = (1947, -5))
 text!(ax, L"\text{Repressurization}", position = (1959, -5))
 text!(ax, L"A_\phi = 1.25 \; | \; 1.75", position = (1937, -20))
+#text!(ax, L"A_\phi = 0.0", position = (1937, -20))
 xlims!(ax, 1935, 1975)
 ylims!(ax, -21, 0)
 axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=16)
 
 ax = Axis(f[1, 2], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\text{eff}}/\sigma_{ii,0}^{\text{eff}} \; \text{[-]}", xlabelsize = 18, ylabelsize = 18)
 lines!(ax, [1958, 1958], [0.5, 2.0], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.0, linestyle = :dash)
-ln1 = lines!(ax, t, s_xx_norm, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{xx}")
-ln2 = lines!(ax, t, s_yy_norm, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{yy}")
-ln3 = lines!(ax, t, s_zz_norm, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\overline{\sigma}_{zz}")
+ln1 = lines!(ax, t[2:end], s_xx_norm, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{xx}")
+ln2 = lines!(ax, t[2:end], s_yy_norm, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{yy}")
+ln3 = lines!(ax, t[2:end], s_zz_norm, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\overline{\sigma}_{zz}")
 xlims!(ax, 1935, 1975)
 ylims!(ax, 0.5, 2.0)
 f
@@ -290,15 +298,15 @@ f
 # Plot 2: max(u_z) vs t, comparison with subsidence data
 #
 data_u3max = [1947 1951 1954 1958 1965 1975; -2.4 -4 -6.1 -7.9 -8.8 -7.4]        # Kosloff et al., Tectonophysics (1980)
-#data_u3max = [1975; 0.45]  
+#data_u3max = [1975; 1.4]  # 1975-1965, 1.4 m rebound, Kosloff et al., Tectonophysics (1980)
 f = Figure(size=(400, 300))
-#ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1965, yticks =-10:2:0)
-ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1935:5:1975, yticks =-10:2:0)
+#ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1930:10:2020, yticks =0:2:10)
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\max \; u_z \; \text{ [m]}", xlabelsize = 18, ylabelsize = 18, xticks=1930:10:2020, yticks =-10:2:0)
 sc1 = scatter!(ax, data_u3max[1, :], data_u3max[2, :], markersize=10, color=RGBAf(1,1,1,0), marker=:rect, strokewidth=1, strokecolor=:black, label=L"\text{ Field data}")
-ln1 = lines!(ax, t, u_z_top, color=:black, linewidth=1, label=L"\text{ Model}")
-xlims!(ax, 1935, 1977)
+ln1 = lines!(ax, t[2:end], u_z_top, color=:black, linewidth=1, label=L"\text{ Model}")
+xlims!(ax, 1930, 2020)
 ylims!(ax, -10, 0)
 #ylims!(ax, 0, 10)
-axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-#save(join([figs_dir, "u3_surface_", sim_name, ".pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "u3_surface_", sim_name, "subsidence.pdf"]), f, pt_per_unit = 1)

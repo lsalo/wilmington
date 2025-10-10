@@ -15,11 +15,16 @@ using CairoMakie
 CairoMakie.activate!()
 
 # Directories and options
-dir_in = "C:/Users/lsalo/julia/output/wilmington/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+if Sys.isapple()
+    dir_in = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/output/wilmington/input_data/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+elseif Sys.iswindows()
+    dir_in = "C:/Users/lsalo/julia/output/wilmington/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+end
 
 regime = "strike-slip"
-a_phi = "1.25"
+a_phi = "1.25-1.75"
 cap_case = "above-basement"  # entire_domain | above-basement | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
@@ -103,8 +108,8 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[5, 6, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.17          # #1.7 #1.27 #1.17 #1.05 #1.12 #1.2 1.35 #1.02 #1.18 #1.41 #1.08 #1.15
-        f_K = 0.27
+        f_p = 1.17          #1.17 #1.7 #1.27 #1.17 #1.05 #1.12 #1.2 1.35 #1.02 #1.18 #1.41 #1.08 #1.15
+        f_K = 0.47
     elseif cap_case == "pico"
         z_pt = -[475, 485, 950, 1000, 2620, 2650]
         #z_pt = -[450, 460, 950, 1000, 2620, 2650]
