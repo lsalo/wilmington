@@ -54,7 +54,8 @@ nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connect
 # Get nodeset faces - for now tetrahedra only
 #nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
 #nsets_to_export = ["Wilmington"]
-nsets_to_export = ["Tear_Fault_4"]
+#nsets_to_export = ["Tear_Fault_4"]
+nsets_to_export = ["Tear_Fault_4", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b","Tear_Fault_11"]
 face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 
 # Face centroids and normals
@@ -99,12 +100,14 @@ end
 n_steps = length(dcff[1])
 dcff_avg = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
 dcff_10 = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
-dcff_90 = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
+dcff_95 = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
+dcff_max = [Vector{Float64}(undef, n_steps) for _ in 1:length(nsets_to_export)]
 for nset in eachindex(nsets_to_export)
     for i in 1:n_steps
         dcff_avg[nset][i] = mean(dcff[nset][i][:, 2])
         dcff_10[nset][i] = quantile(dcff[nset][i][:, 2], 0.1)
-        dcff_90[nset][i] = quantile(dcff[nset][i][:, 2], 0.9)
+        dcff_95[nset][i] = quantile(dcff[nset][i][:, 2], 0.95)
+        dcff_max[nset][i] = maximum(dcff[nset][i][:, 2])
     end
 end
 
@@ -115,8 +118,13 @@ face_list_intersect = get_face_connectivity_nodesets(nsets_to_intersect, nset_na
 nodes_coords_plot = Vector{}(undef, length(nsets_to_intersect))
 for nset in eachindex(nsets_to_intersect)
     unique_nodes = unique(face_list_intersect[nset])
-    common_nodes = intersect(unique_nodes, face_list[1]) # update index of face_list according to nset for intersections
-    nodes_coords_plot[nset]  = vcat([nodes_inp[nodes_inp[:, 1] .== node_id, 2:4] for node_id in common_nodes]...)
+    all_common_nodes = Int[]
+    for nset2 in eachindex(nsets_to_export)
+        common_nodes = intersect(unique_nodes, face_list[nset2]) # update index of face_list according to nset for intersections
+        append!(all_common_nodes, common_nodes)
+    end
+    all_common_nodes = unique(all_common_nodes)
+    nodes_coords_plot[nset]  = vcat([nodes_inp[nodes_inp[:, 1] .== node_id, 2:4] for node_id in all_common_nodes]...)
 end
 
 
@@ -126,41 +134,42 @@ using CairoMakie
 CairoMakie.activate!()
 
 t = collect(1936:2020)  # Make Auto 
-#cmap = cgrad(:nipy_spectral, length(nsets_to_export))
-cmap = cgrad(:roma, length(nsets_to_export))
 
+
+cmap = cgrad(:roma, length(nsets_to_export))
+#cmap = cgrad(:nipy_spectral, length(nsets_to_export))
 f = Figure(size=(900, 350))
 ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\overline{\text{DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
 for (i, data) in enumerate(dcff_avg)
-    normalized_i = i / length(nsets_to_export)
-    lbl = replace(nsets_to_export[i], "Tear_Fault_" => "TF")
-    lbl = latexstring("\\text{" * lbl * "}")
-    #lbl = latexstring("\\text{" * nsets_to_export[i] * "}")
-    lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5, label=lbl)
+        normalized_i = k / length(idplot)
+        lbl = replace(nsets_to_export[i], "Tear_Fault_" => "TF")
+        lbl = latexstring("\\text{" * lbl * "}")
+        #lbl = latexstring("\\text{" * nsets_to_export[i] * "}")
+        lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5, label=lbl)
 end
-xlims!(ax, 1936, 2020)
+xlims!(ax, 1935, 1975)
 #ylims!(ax, -10, 1)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), nbanks=2) 
 
 #ax = Axis(f[1, 2], ylabel = L"\min{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-ax = Axis(f[1, 2], ylabel = L"\text{P}{10} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-for (i, data) in enumerate(dcff_10)
-    normalized_i = i / length(nsets_to_export)
-    lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
-end
-xlims!(ax, 1936, 2020)
+#ax = Axis(f[1, 2], ylabel = L"\text{P}{10} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+#for (i, data) in enumerate(dcff_10)
+#    normalized_i = i / length(nsets_to_export)
+#    lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
+#end
+#xlims!(ax, 1936, 1975)
 #ylims!(ax, -25, 1)
 
 #ax = Axis(f[1, 3], ylabel = L"\max{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-ax = Axis(f[1, 3], ylabel = L"\text{P}{90} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-for (i, data) in enumerate(dcff_90)
-    normalized_i = i / length(nsets_to_export)
-    lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
+ax = Axis(f[1, 2], ylabel = L"\max \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+for (i, data) in enumerate(dcff_max)
+        normalized_i = k / length(idplot)
+        lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
 end
-xlims!(ax, 1936, 2020)
+xlims!(ax, 1935, 1975)
 #ylims!(ax, -1, 3)
 f
-save(join([figs_dir, "dcff_vs_t_TearFaults.pdf"]), f, pt_per_unit = 1)
+save(join([figs_dir, "dcff_vs_t_TearFaults_1936-1975.pdf"]), f, pt_per_unit = 1)
 
 
 # 2. Plot Map
@@ -178,6 +187,7 @@ coords_map[1] = nodes_inp[in.(nodes_inp[:, 1], Ref(unique_ids)), 2:end]
 #tstep = "step_264_nodes.dat" # t=1958, before injectors turn on
 #tstep = "step_468_nodes.dat" # t=1975, end of repressurization
 #tstep = "step_89_nodes.dat" # t=1958
+#tstep = "step_97_nodes.dat" # t=1960
 #tstep = "step_149_nodes.dat" # t=1973
 tstep = "step_157_nodes.dat" # t=1975
 #tstep = "step_217_nodes.dat" # t=1990
@@ -197,7 +207,7 @@ for (i, node) in enumerate(unique_ids)
     values_plot[i, :] = mean(tmp[id_rows, 2:end], dims=1)
 end
 vals_nodes = Vector{}(undef, 1)
-col_idx = 2;
+col_idx = 1;
 vals_nodes[1] = values_plot[:, col_idx] ./ 1e5         # bar, column index 1 = dcff, 2 = dsn, 3 = dtau
 if col_idx == 1
     labl = L"\text{DCFF [bar]}"
@@ -214,7 +224,7 @@ face_list_map[1], _ = renumber_array_1_to_n(vcat(face_list...))
 #mycmap = cgrad(:oleron)
 #mycmap = cgrad(:lajolla)
 mycmap = cgrad(:curl)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 700, cbar_height = 300, plot_azi = -0.5*pi, plot_elev = 0.2*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "tf4_dsn_plastic-116_tstep157", target_dpi=400, target_size_in=(12,9))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 800, cbar_height = 300, plot_azi = -0.8*pi, plot_elev = 0.2*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "tf_dcff_plastic-116_tstep157", target_dpi=400, target_size_in=(12,9))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor; node_coords_plot = nodes_coords_plot)
 
 
