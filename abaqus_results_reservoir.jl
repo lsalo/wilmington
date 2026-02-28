@@ -26,7 +26,7 @@ using .Fileio
 
 
 ## Directories and options
-sim_name = "plastic-120"
+sim_name = "plastic-130"
 platform = Sys.ARCH
 if platform == :x86_64      # GRS3 Windows server
     sim_dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/"
@@ -35,7 +35,7 @@ if platform == :x86_64      # GRS3 Windows server
     figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/"
 elseif platform == :aarch64  # MBP
     sim_dir = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/"
-    dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/grids/"
+    dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/AbaqusGrids/"
     dir_in = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/input_data/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
 end
@@ -132,13 +132,13 @@ end
 # Plot 1: (a) stress path of ranger cell closest to node with specified u_z (e.g., max(u_z))
 #         (b) u_z vs s33 (top ranger)
 
-regime = "strike-slip"
+regime = "reverse"
 
 # Plot parameters
 # Cap model parameters
 d = 1e-3        # MPa
 b = 55          # 55, 58.6, 52.41 deg
-R = 0.8         # 1.227
+R = 0.2         # 1.227
 W = 0.27        # [-]
 D = 0.7143      # 1/kbar
 e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
@@ -146,8 +146,8 @@ e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
 # Hardening curve [Pa]
 # p_eff_el below should be very close to p_eff[1] above
 if regime == "reverse"
-    #s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
-    s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.5.inp"]), ',')
+    s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
+    #s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.5.inp"]), ',')
 elseif regime == "normal"
     s_ini_el = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
 elseif regime == "strike-slip"
@@ -178,7 +178,9 @@ p_eff_ini_el = -(1/3)*sum(s_ini_el[id_element, 2:4])
 #p_b = 1.35*p_eff_ini_el .+ 0.7*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-112
 #p_b = 1.35*p_eff_ini_el .+ 0.9*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-114, plastic-115
 #p_b = 1.35*p_eff_ini_el .+ 0.95*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)    # plastic-116
-p_b = 1.17*p_eff_ini_el .+ 0.47*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-120
+#p_b = 1.17*p_eff_ini_el .+ 0.47*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8)     # plastic-120
+#p_b = 1.08*p_eff_ini_el .+ 0.05*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-123 
+p_b = 1.18*p_eff_ini_el .+ 0.25*((1/3)*(1/D)*log.(e_p./W .+ 1)*1e8) # plastic-130
 
 # Shear envelope and cap
 e_p0 = 0
@@ -187,12 +189,12 @@ q_Fs = p_Fs.*tand(b) .+ d
 
 p_a = (1e-6*p_b[1] - R*d) / (1 + R*tand(b))             # pb[1] = Initial cap position
 if node_select == "max_subsidence"
-    #q_Fc = vcat(Vector{}(0:1:27), 27.01:0.01:28.0)   # p_b[1], 
+    q_Fc = vcat(Vector{}(0:1:29), 29.01:0.01:30.1)   # p_b[1], 
     #q_Fc = vcat(Vector{}(0:1:35), 35.01:0.01:36.8)   # p_b[1], b = 58
     #q_Fc = vcat(Vector{}(0:1:29), 29.02:.02:29.16)   
     #q_Fc = vcat(Vector{}(0:1:8), 8.02:.02:9.66)     # normal regime  
     #q_Fc = vcat(Vector{}(0:1:16), 16.02:.02:16.4)    # strike-slip regime
-    q_Fc = vcat(Vector{}(0:1:7), 7.01:0.01:9, 9:.001:9.355)    # strike-slip regime
+    #q_Fc = vcat(Vector{}(0:1:7), 7.01:0.01:9, 9:.001:9.355)    # strike-slip regime
 elseif node_select == "max_rebound"
     #q_Fc = vcat(Vector{}(0:1:34), 34.1:.1:34.9)         # p_b[1], b = 52
     #q_Fc = vcat(Vector{}(0:1:40), 40.02:.02:40.7)         # p_b[1],  b= 58
@@ -208,8 +210,8 @@ ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L
 ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1, linestyle = :solid, label=L"F_\text{c}^0")
 sc1 = scatter!(ax, p_eff/1e6, q/1e6, markersize = 6, color=t, colormap=:rainbow, label=L"\text{Ranger element}")
 if regime == "reverse"
-    xlims!(ax, 0, 45)
-    ylims!(ax, 0, 45)
+    xlims!(ax, 0, 35)
+    ylims!(ax, 0, 35)
 elseif regime == "normal"
     xlims!(ax, 0, 16)
     ylims!(ax, 0, 16)
@@ -226,13 +228,13 @@ cbar = Colorbar(f[1, 2], sc1, label=L"\text{Year}", labelsize=12, width=12, tick
 #ylims!(ax, 0, 75)
 if regime == "reverse"
     #ax = Axis(f[1, 3], xlabel = L"\sigma_{33} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=20:2:30)
-    ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=20:2:30)
+    ax = Axis(f[1, 3], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"u_z \; \text{ [m]}", xlabelsize = 16, ylabelsize = 16, xticks=18:2:30, yticks=-10:2:0)
     #sc1 = scatter!(ax, s_33/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \; \text{ (top Ranger)}")
     sc1 = scatter!(ax, p_eff/1e6, u_z, markersize = 8, color=1:length(u_z), colormap=:rainbow, label=L"\max(u_z) \text{, top Ranger}")
     if node_select == "max_subsidence"
         #xlims!(ax, -10, -20)
-        xlims!(ax, 20, 30)
-        ylims!(ax, -8, 0)
+        xlims!(ax, 18, 30)
+        ylims!(ax, -10, 0)
     elseif node_select == "max_rebound"
         xlims!(ax, -10, -20)
         ylims!(ax, -1, 5)
@@ -271,25 +273,25 @@ s_yy_norm = s_yy ./ s[1][2]
 s_zz_norm = s_zz ./ s[1][3]
 
 f = Figure(size=(700, 300))
-ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\text{eff}} \; \text{[MPa]}", xlabelsize = 18, ylabelsize = 18)
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\prime} \; \text{[MPa]}", xlabelsize = 18, ylabelsize = 18, xticks=1940:20:2020)
 lines!(ax, [1958, 1958], [-50, 0.0], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.0, linestyle = :dash)
 ln1 = lines!(ax, t[2:end], s_xx ./ 1e6, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{xx}")
 ln2 = lines!(ax, t[2:end], s_yy ./ 1e6, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\sigma_{yy}")
 ln3 = lines!(ax, t[2:end], s_zz ./ 1e6, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\sigma_{zz}")
-text!(ax, L"\text{Depletion}", position = (1947, -5))
-text!(ax, L"\text{Repressurization}", position = (1959, -5))
-text!(ax, L"A_\phi = 1.25 \; | \; 1.75", position = (1937, -20))
-#text!(ax, L"A_\phi = 0.0", position = (1937, -20))
-xlims!(ax, 1935, 1975)
-ylims!(ax, -21, 0)
-axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=16)
+text!(ax, L"\text{Depletion}", position = (1937, -5))
+#text!(ax, L"\text{Repr.}", position = (1959, -5))
+text!(ax, L"A_\phi = 2.06", position = (1980, -48))
+#text!(ax, L"A_\phi = 1.25 \, | \, 1.75", position = (1970, -29))
+xlims!(ax, 1935, 2020)
+ylims!(ax, -50, 0)
+axislegend(position = :rb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=16)
 
-ax = Axis(f[1, 2], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\text{eff}}/\sigma_{ii,0}^{\text{eff}} \; \text{[-]}", xlabelsize = 18, ylabelsize = 18)
+ax = Axis(f[1, 2], xlabel = L"t \; \text{ [y]}", ylabel = L"\sigma_{ii}^{\prime}\, / \, \sigma_{ii,0}^{\prime} \; \text{[-]}", xlabelsize = 18, ylabelsize = 18, xticks=1940:20:2020)
 lines!(ax, [1958, 1958], [0.5, 2.0], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.0, linestyle = :dash)
 ln1 = lines!(ax, t[2:end], s_xx_norm, color = RGBAf(0, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{xx}")
 ln2 = lines!(ax, t[2:end], s_yy_norm, color = RGBAf(1, 0, 0, 1), linewidth = 1.0, label=L"\overline{\sigma}_{yy}")
 ln3 = lines!(ax, t[2:end], s_zz_norm, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label=L"\overline{\sigma}_{zz}")
-xlims!(ax, 1935, 1975)
+xlims!(ax, 1935, 2020)
 ylims!(ax, 0.5, 2.0)
 f
 #save(join([figs_dir, "stress_ratios_ranger_", node_select, "_", sim_name, ".pdf"]), f, pt_per_unit = 1)

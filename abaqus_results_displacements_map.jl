@@ -26,7 +26,7 @@ includet(joinpath(lib_dir, "modules", "MakiePolyPlot.jl"))
 using .MakiePolyPlot
 
 # Directories
-sim_name = "plastic-116"
+sim_name = "plastic-120"
 platform = Sys.ARCH
 if platform == :x86_64 
     dir_inp  = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -45,18 +45,24 @@ sim_dir = sim_dir * sim_name * "/extracted/U/"
 # Get connectivity from .inp grid: We need to get the *face* connectivity of node sets
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_ENTIRE_DOMAIN_Coarse.inp"
 #nsets_to_export = ["TopBC", "TopRangerSurface"]
-nsets_to_export = ["Wilmington"]
+#nsets_to_export = ["Wilmington"]
 #nsets_to_export = ["ComptonLosAlamitos_a", "ComptonLosAlamitos_b", "ComptonLosAlamitos_c", "Newport", "PalosVerdes", "Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27", "Wilmington"]
 #nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
-nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral", false)
-face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
+nsets_to_export = []
+if ~isempty(nsets_to_export)
+    nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral", false)
+    face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
+else
+    face_list = []
+end
 
 # Simulation data: get values at the nodes from abaqus
 nodal_disp = Vector{}(undef, length(nsets_to_export))
 #tstep = "step_468"
-#tstep = "step_89"
+tstep = "step_89"
+#tstep = "step_117"
 #tstep = "step_157"
-tstep = "step_337"
+#tstep = "step_337"
 for nset in eachindex(nsets_to_export)
     data = readdlm(join([sim_dir, nsets_to_export[nset], "/", tstep, "_nodes.dat"]), ',', Float64, '\n', skipstart=1)
     nodal_disp[nset] = Matrix{Union{Int,Float64}}(data)
@@ -65,7 +71,7 @@ end
 
 # 2. Element data (connectivity and displacements)
 fn_inp  = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
-elsets_to_export = ["Ranger"] #OverburdenPico
+elsets_to_export = ["OverburdenPico"] #OverburdenPico
 _, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connectivity_from_inp(dir_inp, fn_inp, "tetrahedral")
 face_list_el = get_face_connectivity_elsets(elsets_to_export, elset_names_inp, elements_inp, "tetrahedral")
 
@@ -95,16 +101,18 @@ for set in 1:nsets
     unique_ids = sort(unique(face_list[set]))      
     coords_map[set] = nodes_inp2[in.(nodes_inp2[:, 1], Ref(unique_ids)), 2:end]
     nodal_disp_plot = sortslices(nodal_disp[set], dims=1, by=x->x[1])  
-    vals_nodes[set] = nodal_disp_plot[:, end] # U3 [m]   
+    #vals_nodes[set] = nodal_disp_plot[:, end] # U3 [m]   
+    vals_nodes[set] = sqrt.(nodal_disp_plot[:, 2].^2 + nodal_disp_plot[:, 3].^2) # U_hzntal [m]  
     face_list_map[set], _ = renumber_array_1_to_n(face_list[set])
 end
 
 # Make plot
-labl = L"$u_z$ [m]"
-mycmap = cgrad(:lapaz)
+#labl = L"$u_\text{z}$ [m]"
+labl = L"$||\mathbf{u}_h||$ [m]"
+mycmap = cgrad(:bone_1, rev=true)
 
 # Fig descriptor
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1500, cbar_height = 400, plot_azi = 1.6*pi, plot_elev = 0.1*pi, plot_linew=0.1, xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])), ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])), save_fig = true, save_dir = figs_dir, title = "u_3_ranger-wilmington_plastic-116_t337", target_dpi=400, target_size_in=(15,12))
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1500, 1200), plot_height = 1000, cbar_height = 400, plot_azi = -0.5*pi, plot_elev = 0.5*pi, plot_linew=0.1, xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])), ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])), save_fig = true, save_dir = figs_dir, title = "u_h_ovbPico_plastic-120_t89", target_dpi=400, target_size_in=(15,12))
 
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor)
 

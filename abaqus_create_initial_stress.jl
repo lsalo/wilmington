@@ -26,15 +26,23 @@ using Printf
 #using ColorSchemes
 using Distances
 
-lib_dir = "C:/Users/lsalo/julia/jl-tools/"
+lib_dir = "../jl-tools/"
 includet(joinpath(lib_dir, "modules", "abaqus.jl"))
 using .Abaqus
 
 # Directories
-dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
-dir_data = "C:/Users/lsalo/Wilmington/2023_SCEC_CSM/SCEC_CSM_archive_2023/"
-dir_out = "C:/Users/lsalo/julia/output/wilmington/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+platform = Sys.ARCH
+if platform == :x86_64      # GRS3 Windows server
+    dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
+    dir_data = "C:/Users/lsalo/Wilmington/2023_SCEC_CSM/SCEC_CSM_archive_2023/"
+    dir_out = "C:/Users/lsalo/julia/output/wilmington/"
+    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+elseif platform == :aarch64  # MBP
+    dir_inp = "/Users/lluis/Dropbox (MIT)/home_copy/abaqus/wilmington/AbaqusGrids/"
+    dir_data = "/Users/lluis/MIT Dropbox/Lluis Salo/Postdoc_Harvard-MIT/research/LAB/Wilmington/2023_SCEC_CSM/SCEC_CSM_archive_2023/"
+    dir_out = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/"
+    figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
+end
 
 
 # 1. STRESS MODELS DATA
@@ -238,8 +246,8 @@ peff_ini_nod = vec(-(1/3)*sum(hcat(s1_nod .+ p_nod, s2_nod .+ p_nod, s3_nod .+ p
 # NOTE: EFFECTIVE STRESSES!
 if regime == "a_fit" || regime == "reverse"        # reverse, s11 = sxx, s22 = syy, s33 = szz
     stress_out = hcat(centroids[:,1], s1 .+ p, s2 .+ p, s3 .+ p, t, t, t)
-    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_aphi", a_phi, ".inp"]), stress_out, ',')
-    fnp = join(["peff_ini_nod_aphi", a_phi, ".inp"])
+    writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_aphi", round(mean(a_phi), digits=2), ".inp"]), stress_out, ',')
+    fnp = join(["peff_ini_nod_aphi", round(mean(a_phi), digits=2), ".inp"])
 elseif regime == "normal"   # normal, s11 = szz, s22 = sxx, s33 = syy
     stress_out = hcat(centroids[:,1], s2 .+ p, s3 .+ p, s1 .+ p, t, t, t)
     writedlm(join([dir_out, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), stress_out, ',')
@@ -276,21 +284,21 @@ target_xyz[:, 3] = LinRange(0, -15000, 76)
 D = pairwise(Euclidean(), centroids[:, 2:end], target_xyz; dims=1)
 id_closest_els = vec(mapslices(argmin, D; dims=1))
 
-f = Figure(size=(500, 400))
-ax = Axis(f[1, 1], xlabel = L"\text{Stress [MPa]}", ylabel = L"\text{Depth [km]}", xlabelsize = 16, ylabelsize = 16, xticks=[0, -100, -200, -300, -400, -500, -600], yticks=[0, 2.5, 5, 7.5, 10, 12.5, 15])
-poly!(ax, Point2f.([0, -600, -600, 0, 0], [15, 15, 2.9, 2.9, 15]), color = RGBAf(0.8, 0.8, 0.8, 0.5))
-lines!(ax, [-600, 0], [2.9, 2.9], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.75, linestyle = :solid)
-text!(ax, -250, 2.0, text=L"\text{Sediments, mob. } \mu=0.3 \text{, } A_\phi=1.25", fontsize=14, color = :black)
-text!(ax, -250, 5.0, text=L"\text{Basement, mob. } \mu=0.6 \text{, } A_\phi=1.75", fontsize=14, color = :black)
-scatter!(ax, s1[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\sigma_{xx}")
-scatter!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_{zz}")
-scatter!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, markersize = 8, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\sigma_{yy}")
+f = Figure(size=(400, 300))
+ax = Axis(f[1, 1], xlabel = L"\text{Total stress magnitude [MPa]}", ylabel = L"\text{Depth [km]}", xlabelsize = 16, ylabelsize = 16, xticks=[0, -100, -200, -300, -400, -500, -600, -700], yticks=[0, 2.5, 5, 7.5, 10, 12.5, 15])
+poly!(ax, Point2f.([0, -700, -700, 0, 0], [15, 15, 2.9, 2.9, 15]), color = RGBAf(0.8, 0.8, 0.8, 0.5))
+lines!(ax, [-700, 0], [2.9, 2.9], color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 0.75, linestyle = :dash)
+text!(ax, -200, 2.0, text=L"\text{Sediments, mob. } \mu=0.3 \text{, } A_\phi=1.25", fontsize=14, color = :black)
+text!(ax, -200, 5.0, text=L"\text{Basement, mob. } \mu=0.6 \text{, } A_\phi=1.75", fontsize=14, color = :black)
+lines!(ax, s1[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, color = RGBAf(0, 0, 0, 1), linewidth = 0.5, linestyle = :solid, label=L"\sigma_\text{H}")
+lines!(ax, s2[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, color = RGBAf(1, 0, 0, 1), linewidth = 0.5, linestyle = :solid, label=L"\sigma_\text{v}")
+lines!(ax, s3[id_closest_els]./1e6, centroids[id_closest_els, end]./-1000, color = RGBAf(0, 0, 1, 1), linewidth = 0.5, linestyle = :solid, label=L"\sigma_\text{h}")
 ylims!(ax, 15, 0)
-xlims!(ax, 0, -550)
-#text!(ax, -10, 11, text=L"A_\phi = 1.5", fontsize = 16)
+xlims!(ax, 0, -700)
+#text!(ax, -10, 14.5, text=L"A_\phi = 0.0", fontsize = 16)
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-#save(join([figs_dir, "stress_state.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "stress_state_aphi1.25-1.75.pdf"]), f, pt_per_unit = 1)
 
 x_plot = LinRange(0, 20, 41)
 mycmap=cgrad(:nipy_spectral)

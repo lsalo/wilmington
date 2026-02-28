@@ -17,14 +17,14 @@ CairoMakie.activate!()
 # Directories and options
 if Sys.isapple()
     dir_in = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/output/wilmington/input_data/"
-    figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
+    figs_dir = "/Users/lluis/MIT Dropbox/Lluis Salo/home_copy/julia/graphics/wilmington/test/" 
 elseif Sys.iswindows()
     dir_in = "C:/Users/lsalo/julia/output/wilmington/"
     figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/paper1/" 
 end
 
-regime = "strike-slip"
-a_phi = "1.25-1.75"
+regime = "reverse"
+a_phi = "CSMfit"
 cap_case = "above-basement"  # entire_domain | above-basement | ranger | ranger-pico | ranger-pico-overPico | pico | overPico | bottomRanger
 model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 
@@ -33,10 +33,10 @@ model_name = "mdpcm"   # mdpcm | cam-clay (isotropic, K=1)
 centroids       = readdlm(join([dir_in, "element_centroids.dat"]), ',')
 nodal_depth     = readdlm(join([dir_in, "nodal_depth.dat"]), ',')
 if regime == "reverse"
-    #peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
-    #stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
-    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_aphi2.5.inp"]), ',')
-    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.5.inp"]), ',')
+    peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod.inp"]), ',')
+    stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
+    #peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_aphi2.5.inp"]), ',')
+    #stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.5.inp"]), ',')
 elseif regime == "normal"
     peff_ini_nod    = readdlm(join([dir_in, "peff_ini_nod_normal.inp"]), ',')
     stress_ini      = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6_normal.inp"]), ',')
@@ -77,7 +77,7 @@ if model_name == "mdpcm"
     # Cap model parameters 
     d = 1e-3        # MPa
     b = 55.0        # 58.6 (\phi = 40) 52.41 deg (32), 55 (35)
-    R = 0.8         # 0.4
+    R = 0.2         # 0.8, 0.3, 0.4
     W = 0.27        # [-]
     D = 0.7143      # 1/kbar
 
@@ -88,8 +88,8 @@ if model_name == "mdpcm"
         #z_pt = -[890, 900, 1420, 1430, 2890, 3000]
         #e_p = [0, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1, 0.15, 0.2]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.7 #1.28 #1.12 #1.08 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3, normal) 1.2 (R=0.3, strike-slip)
-        f_K = 0.5
+        f_p = 1.18 #1.28 #1.12 #1.08 #1.01 (R=0.001) 1.02 (R=0.02) 1.08 (R=0.1) 1.15-1.18 (R=0.2) 1.41 (R=0.5) 1.35 (R=0.3, normal) 1.2 (R=0.3, strike-slip)
+        f_K = 0.1
     elseif cap_case == "entire_domain"
         z_pt = -[0, 1, 990, 1000, 2890, 3000, 5890, 6000, 14995, 15005]
         e_p = [0, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2]
@@ -108,8 +108,8 @@ if model_name == "mdpcm"
     elseif cap_case == "above-basement"
         z_pt = -[5, 6, 890, 900, 1420, 1430, 2890, 3000, 4890, 5000, 8890, 9000]
         e_p = [0, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
-        f_p = 1.17          #1.17 #1.7 #1.27 #1.17 #1.05 #1.12 #1.2 1.35 #1.02 #1.18 #1.41 #1.08 #1.15
-        f_K = 0.47
+        f_p = 1.18                      #1.35 #1.17 #1.7 #1.27 #1.17 #1.05 #1.12 #1.2 1.35 #1.02 #1.18 #1.41 #1.08 #1.15
+        f_K = 0.25                       #0.95, 0.47
     elseif cap_case == "pico"
         z_pt = -[475, 485, 950, 1000, 2620, 2650]
         #z_pt = -[450, 460, 950, 1000, 2620, 2650]
@@ -197,12 +197,12 @@ if model_name == "mdpcm"
     e_p0 = 0
     if cap_case == "ranger" || cap_case == "ranger-pico"
         p_Fs = Vector{}(0:10:100)
-        #q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))   # reverse regime pb[end]
+        q_Fc = vcat(Vector{}(0:1:79), Vector{}(79.1:.1:79.5))   # reverse regime pb[end]
         #q_Fc = vcat(Vector{}(0:1:26), Vector{}(26.1:.1:26.1))  # reverse regime pb[1]
         #q_Fc = vcat(Vector{}(0:1:25), Vector{}(25.02:.02:26.66))   # normal
         #q_Fc = vcat(Vector{}(0:1:8), Vector{}(8.05:.05:9.15)) 
         #q_Fc = vcat(Vector{}(0:1:24), Vector{}(24:.01:25.3)) #strike-slip
-        q_Fc = vcat(Vector{}(0:1:7), Vector{}(7.01:.01:8.7)) #strike-slip
+        #q_Fc = vcat(Vector{}(0:1:7), Vector{}(7.01:.01:8.7)) #strike-slip
     elseif cap_case == "entire_domain"
         p_Fs = Vector{}(0:10:400)
         q_Fc = vcat(Vector{}(0:10:400), Vector{}(400:1:407))
@@ -225,19 +225,19 @@ if model_name == "mdpcm"
     end
     q_Fs = p_Fs.*tand(b) .+ d
     #p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
-    p_a = (1e-6*p_b[1][1] - R*d) / (1 + R*tand(b))
+    p_a = (1e-6*p_b[end][1] - R*d) / (1 + R*tand(b))
     p_Fc = p_a .+ sqrt.( abs.((R*(d + p_a*tand(b)))^2 .- (R.*q_Fc).^2) )
 
     f = Figure(size=(800, 400))
     #ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:25:125, yticks=0:25:125)
-    ax = Axis(f[1, 1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
+    ax = Axis(f[1,1], xlabel = L"p^\text{eff} = -\frac{\sigma_{kk}^\text{eff}}{3} \; \text{ [MPa]}", ylabel = L"q = \sqrt{3 J_2} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
     ln1 = lines!(ax, p_Fs, q_Fs, color = RGBAf(0, 0, 0, 1), linewidth = 2, label=L"F_\text{s}")
     ln1 = lines!(ax, p_Fc, q_Fc, color = RGBAf(0.5, 0.5, 0.5, 1), linewidth = 1.5, linestyle = :solid, label=L"F_\text{c}")
     sc1 = scatter!(ax, p_ini, q_ini, markersize = 3, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\sigma_0 \; \text{ (elements)}")
     #text!(ax, p_b0+1, 0, text=L"p_\text{b}", fontsize=14)
     if cap_case == "ranger" || cap_case == "ranger-pico"
-        xlims!(ax, 0, 25)   # 30
-        ylims!(ax, 0, 25)   # 30
+        xlims!(ax, 0, 80)   # 30
+        ylims!(ax, 0, 80)   # 30
     elseif cap_case == "entire_domain"
         xlims!(ax, 0, 400)
         ylims!(ax, 0, 450)
@@ -254,14 +254,24 @@ if model_name == "mdpcm"
         ylims!(ax, 0, 35)
     end
     axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
-
-    ax = Axis(f[1, 2], xlabel = L"e^\text{in}_\text{v} \; \text{ [-]}", ylabel = L"p_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-    ln1 = lines!(ax, e_p, p_b[1]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
-    ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
-    ln1 = lines!(ax, e_p, p_b[3]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5)
-    xlims!(ax, 0, 0.2)
-    ylims!(ax, 0, 60)
     f
+
+    f = Figure(size=(450, 350))
+    ax = Axis(f[1,1], xlabel = L"e^\text{pl}_\text{v} \; \text{ [-]}", ylabel = L"p^\prime_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:0.05:0.2, yticks=0:50:200, title = L"A_\phi = 1.25 \; | \; 1.75", titlesize=16)
+    #ax = Axis(f[1,1], xlabel = L"e^\text{pl}_\text{v} \; \text{ [-]}", ylabel = L"p^\prime_\text{b} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16, xticks = 0:0.05:0.2, yticks=0:50:200, title = L"A_\phi = 0.0", titlesize=16)
+    ln1 = lines!(ax, e_p, p_b[end]*1e-6, color = RGBAf(1, 0, 0, 1), linewidth = 1.5, label=L"p^\prime = 140 \; \text{MPa}")
+    #ln1 = lines!(ax, e_p, p_b[5]*1e-6, color = RGBAf(0, 1, 0, 1), linewidth = 1.5, label=L"p^\prime = 57.2 \; \text{MPa}")
+    ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 1, 1), linewidth = 1.5, label=L"p^\prime = 10.5 \; \text{MPa}")
+    ln1 = lines!(ax, e_p, p_b[1]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"p^\prime = 0.06 \; \text{MPa}")
+    #ln1 = lines!(ax, e_p, p_b[end]*1e-6, color = RGBAf(1, 0, 0, 1), linewidth = 1.5, label=L"p^\prime = 62.2 \; \text{MPa}")
+    #ln1 = lines!(ax, e_p, p_b[5]*1e-6, color = RGBAf(0, 1, 0, 1), linewidth = 1.5, label=L"p^\prime = 34.1 \; \text{MPa}")
+    #ln1 = lines!(ax, e_p, p_b[2]*1e-6, color = RGBAf(0, 0, 1, 1), linewidth = 1.5, label=L"p^\prime = 6.3 \; \text{MPa}")
+    #ln1 = lines!(ax, e_p, p_b[1]*1e-6, color = RGBAf(0, 0, 0, 1), linewidth = 1.5, label=L"p^\prime = 0.03 \; \text{MPa}") 
+    xlims!(ax, 0, 0.2)
+    ylims!(ax, 0, 200)
+    axislegend(position = :lc, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+    f
+    #save(join([figs_dir, "hardening_curves_120.pdf"]), f, pt_per_unit = 1)
 
 elseif model_name == "cam-clay"
     if cap_case == "ranger" || cap_case == "ranger-pico"

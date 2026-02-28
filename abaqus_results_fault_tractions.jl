@@ -31,7 +31,7 @@ includet(joinpath(lib_dir, "modules", "makiePolyPlot.jl"))
 using .MakiePolyPlot
 
 # Directories
-sim_name = "plastic-116"
+sim_name = "plastic-120"
 platform = Sys.ARCH
 if platform == :x86_64 
     dir_inp = "C:/Users/lsalo/Wilmington/AbaqusGrids/"
@@ -54,9 +54,12 @@ nodes_inp, elements_inp, elset_names_inp, nset_inp, nset_names_inp = get_connect
 # Get nodeset faces - for now tetrahedra only
 #nsets_to_export = ["Tear_Fault_2", "Tear_Fault_4", "Tear_Fault_5", "Tear_Fault_6", "Tear_Fault_8a", "Tear_Fault_8b", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b", "Tear_Fault_11", "Tear_Fault_13a", "Tear_Fault_13b", "Tear_Fault_15", "Tear_Fault_19", "Tear_Fault_21a", "Tear_Fault_21b", "Tear_Fault_26", "Tear_Fault_27"]
 #nsets_to_export = ["Wilmington"]
+nsets_to_export = ["PicoSurface"]
 #nsets_to_export = ["Tear_Fault_4"]
-nsets_to_export = ["Tear_Fault_4", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b","Tear_Fault_11"]
-face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
+#nsets_to_export = ["Tear_Fault_4", "Tear_Fault_9", "Tear_Fault_10a", "Tear_Fault_10b","Tear_Fault_11"]
+
+#face_list = get_face_connectivity_nodesets(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
+face_list = get_face_connectivity_nodesets_C3D4(nsets_to_export, nset_names_inp, nset_inp, elements_inp[1])
 
 # Face centroids and normals
 face_unit_normals, face_centroids = face_normals_and_centroids(face_list, nodes_inp)
@@ -66,7 +69,7 @@ mu = 0.6
 nodal_tractions = [Vector{Any}() for _ in 1:length(nsets_to_export)]
 #dcff = Vector{Matrix{Union{Int64,Float64}}}(undef, length(nsets_to_export))
 dcff = [Vector{Any}() for _ in 1:length(nsets_to_export)]
-compute_tractions = false
+compute_tractions = true
 for nset in eachindex(nsets_to_export)
     abaqus_fn_nod = readdir(join([sim_dir, nsets_to_export[nset]]))
     abaqus_fn_nod = sort(abaqus_fn_nod, by=sort_steps)
@@ -112,8 +115,8 @@ for nset in eachindex(nsets_to_export)
 end
 
 # Get intersection of TopRangerSurface and BottomRangerSurface with the fault
-#nsets_to_intersect = ["TopRangerSurface", "BottomRangerSurface", "TopBasementSurface"]
-nsets_to_intersect = ["TopRangerSurface", "BottomRangerSurface"]
+nsets_to_intersect = ["TopRangerSurface", "BottomRangerSurface", "TopBasementSurface"]
+# nsets_to_intersect = ["TopRangerSurface", "BottomRangerSurface"]
 face_list_intersect = get_face_connectivity_nodesets(nsets_to_intersect, nset_names_inp, nset_inp, elements_inp[1], "tetrahedral")
 nodes_coords_plot = Vector{}(undef, length(nsets_to_intersect))
 for nset in eachindex(nsets_to_intersect)
@@ -136,20 +139,20 @@ CairoMakie.activate!()
 t = collect(1936:2020)  # Make Auto 
 
 
-cmap = cgrad(:roma, length(nsets_to_export))
+cmap = cgrad(:roma, length(nsets_to_export), categorical=true)
 #cmap = cgrad(:nipy_spectral, length(nsets_to_export))
-f = Figure(size=(900, 350))
-ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\overline{\text{DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+f = Figure(size=(600, 600))
+ax = Axis(f[1, 1], xlabel = L"t \; \text{ [y]}", ylabel = L"\overline{\text{DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16, xticks=1940:20:2020)
 for (i, data) in enumerate(dcff_avg)
-        normalized_i = k / length(idplot)
+        #norm_i = i / length(idplot)
         lbl = replace(nsets_to_export[i], "Tear_Fault_" => "TF")
         lbl = latexstring("\\text{" * lbl * "}")
         #lbl = latexstring("\\text{" * nsets_to_export[i] * "}")
-        lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5, label=lbl)
+        lines!(ax, t, data./1e5, color = cmap[i], linewidth = 1.5, label=lbl)
 end
-xlims!(ax, 1935, 1975)
+xlims!(ax, 1935, 2020)
 #ylims!(ax, -10, 1)
-axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), nbanks=2) 
+axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), nbanks=2) 
 
 #ax = Axis(f[1, 2], ylabel = L"\min{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
 #ax = Axis(f[1, 2], ylabel = L"\text{P}{10} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
@@ -160,16 +163,16 @@ axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RG
 #xlims!(ax, 1936, 1975)
 #ylims!(ax, -25, 1)
 
-#ax = Axis(f[1, 3], ylabel = L"\max{\text{ DCFF}} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-ax = Axis(f[1, 2], ylabel = L"\max \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
-for (i, data) in enumerate(dcff_max)
-        normalized_i = k / length(idplot)
-        lines!(ax, t, data./1e5, color = cmap[normalized_i], linewidth = 1.5)
+ax = Axis(f[2, 1], ylabel = L"\text{P}{95} \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16, xticks=1940:20:2020)
+#ax = Axis(f[1, 2], ylabel = L"\max \text{ DCFF} \; \text{ [bar]}", xlabelsize = 16, ylabelsize = 16)
+for (i, data) in enumerate(dcff_95)
+        #normalized_i = k / length(idplot)
+        lines!(ax, t, data./1e5, color = cmap[i], linewidth = 1.5)
 end
-xlims!(ax, 1935, 1975)
+xlims!(ax, 1935, 2020)
 #ylims!(ax, -1, 3)
 f
-save(join([figs_dir, "dcff_vs_t_TearFaults_1936-1975.pdf"]), f, pt_per_unit = 1)
+#save(join([figs_dir, "dcff_vs_t_TearFaults_1936-2020.pdf"]), f, pt_per_unit = 1)
 
 
 # 2. Plot Map
@@ -184,15 +187,13 @@ coords_map[1] = nodes_inp[in.(nodes_inp[:, 1], Ref(unique_ids)), 2:end]
 
 # vals nodes
 #ids_nset_export = [2, 9, 10]
-#tstep = "step_264_nodes.dat" # t=1958, before injectors turn on
-#tstep = "step_468_nodes.dat" # t=1975, end of repressurization
 #tstep = "step_89_nodes.dat" # t=1958
 #tstep = "step_97_nodes.dat" # t=1960
 #tstep = "step_149_nodes.dat" # t=1973
-tstep = "step_157_nodes.dat" # t=1975
+#tstep = "step_157_nodes.dat" # t=1975
 #tstep = "step_217_nodes.dat" # t=1990
 #tstep = "step_277_nodes.dat" # t=2005
-#tstep = "step_337_nodes.dat" # t=2020
+tstep = "step_337_nodes.dat" # t=2020
 abaqus_fn_nod = readdir(join([sim_dir, nsets_to_export[1]]))
 abaqus_fn_nod = sort(abaqus_fn_nod, by=sort_steps)
 idx = findfirst(==(tstep), abaqus_fn_nod)
@@ -223,8 +224,9 @@ face_list_map[1], _ = renumber_array_1_to_n(vcat(face_list...))
 
 #mycmap = cgrad(:oleron)
 #mycmap = cgrad(:lajolla)
-mycmap = cgrad(:curl)
-fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 800, cbar_height = 300, plot_azi = -0.8*pi, plot_elev = 0.2*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "tf_dcff_plastic-116_tstep157", target_dpi=400, target_size_in=(12,9))
+mycmap = cgrad(:balance)
+#-0.8*pi, 0.2*pi
+fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size = (1200, 900), plot_height = 800, cbar_height = 300, plot_azi = -0.1*pi, plot_elev = 0.5*pi, plot_linew=0.1, xlms=(nothing, nothing), ylms=(nothing, nothing), save_fig = true, save_dir = figs_dir, title = "tf_dcff_plastic-120_tstep337", target_dpi=400, target_size_in=(12,9))
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor; node_coords_plot = nodes_coords_plot)
 
 

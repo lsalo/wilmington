@@ -191,9 +191,9 @@ coast_data = readdlm(join([dir_data, "cal_outline.dat"]))
 cst = [coast_data[coast_data[:, 3] .== i, :] for i in 1:18] # third column is "category"
 coastline = [cst[6], cst[17], cst[18]]
 
-f = Figure(size=(600, 500))
+f = Figure(size=(600, 425))
 ax = Axis(f[1, 1], xlabel = L"x \text{ [m], UTM 11N}", ylabel = L"y \text{ [m], UTM 11N}", xlabelsize = 16, ylabelsize = 16)
-scatter!(ax, centroids[:, 1], centroids[:, 2], markersize = 0.5, color = :black, label=L"\text{Ranger cell centroids}")
+sc = scatter!(ax, centroids[:, 1], centroids[:, 2], markersize = 1.5, color = centroids[:, 3], colormap = :tempo)
 #scatter!(ax, coord_prod_utm[:, 1], coord_prod_utm[:, 2], markersize = 2, color = :red, label=L"\text{Producers}")
 #scatter!(ax, coord_inj_utm[:, 1], coord_inj_utm[:, 2], markersize = 2, color = :blue, label=L"\text{Injectors}")
 scatter!(ax, centroids[wid_prod_mrst, 1], centroids[wid_prod_mrst, 2], markersize = 2, color = :red, label=L"\text{Producers}")
@@ -207,9 +207,10 @@ for line in coastline
         lines!(ax, line[:, 1], line[:, 2], color=:black, linewidth=0.5, linestyle=:solid)
     end
 end
-xlims!(ax, 3.78e5, 4.0e5)
+xlims!(ax, 3.78e5, 4.01e5)
 ylims!(ax, 3.728e6, 3.752e6)
-axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
+axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
+Colorbar(f[1,2], sc, label = "Depth [m]", height = Relative(0.5))
 f
 #save(join([dir_figs, "cell_centroids_and_wellsWGS84.pdf"]), f, pt_per_unit = 1)
 save(join([dir_figs, "cell_centroids_and_wells_for_MRST_WGS84.pdf"]), f, pt_per_unit = 1)
