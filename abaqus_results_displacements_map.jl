@@ -37,9 +37,9 @@ elseif platform == :aarch64
     sim_dir  = "/Users/lluis//Dropbox (MIT)/home_copy/abaqus/simulation_data/wilmington/"
     figs_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/graphics/wilmington/test/"
     data_dir = "/Users/lluis/Dropbox (MIT)/home_copy/julia/data/wilmington/"
+    dir_out = "/Users/lluis/Dropbox (MIT)/home_copy/julia/output/wilmington/output_data/displacement/" 
 end
 sim_dir = sim_dir * sim_name * "/extracted/U/"
-
 
 # 1. Nodal data (connectivity and displacements)
 # Get connectivity from .inp grid: We need to get the *face* connectivity of node sets
@@ -123,3 +123,6 @@ coastline = [cst[6], cst[17], cst[18]]
 #coastline = [hcat(coastline[:, 2], coastline[:, 1], coastline[:, 3])]
 # Plotting
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor, line_data=coastline)
+
+# Save coordinates and horizontal disp magnitudes
+writedlm(dir_out * sim_name * "/nodal_coords_and_u_h_step_89.dat", hcat(coords_map[1], vals_nodes[1])) 
