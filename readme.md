@@ -1,7 +1,62 @@
-Contains code and data for the wilmington flow-geomechanics project
+# Wilmington flow–geomechanics
 
-### Executing abaqus_export_results python code
-That script needs to be executed using Abaqus. Multiple options to do so, one is from Abaqus CAE in the python terminal: 
+Multiphase-flow and geomechanics modeling of the Wilmington Oil Field (Los Angeles Basin, California): reservoir flow in MRST, geomechanics in Abaqus, and Julia post-processing for subsidence, stress state, and fault stability.
+
+## Citation
+```
+Accompanies [Authors, Year, *TBD*, DOI].
+```
+
+## Requirements
+
+- **Julia 1.11.7** — pinned in `Manifest.toml`. Install with `juliaup add 1.11`.
+- **External engines (full pipeline only):** MRST (open-source, MATLAB) and
+  Abaqus (commercial). Neither is redistributed here; the model setup is
+  specified in the manuscript Methods. The Julia post-processing and figure
+  scripts run against the deposited dataset *without* these engines.
+
+## Setup
+
+1. Open this folder in VS Code; the Julia extension auto-activates the
+   environment (confirm the status bar shows `wilmington`, not `v1.x`).
+2. Install the locked dependencies — in the REPL: `] instantiate`.
+3. Point at the data: download the dataset deposit, then create
+   `config_local.jl` next to `config.jl`:
+```julia
+   const LOCAL_DATA_DIR = "/path/to/wilmington/data"
+```
+   It is gitignored; without it, `config.jl` falls back to `../data`.
+
+4. Run a script, e.g. `include("scripts/abaqus_results_subsidence_rebound.jl")`.
+   Every script starts with `include(joinpath(@__DIR__, "..", "config.jl"))`,
+   which activates the environment and defines all paths (`DATA_DIR`,
+   `ABAQUS_DIR`, `OUT_DIR`, …) and the module loader `tool(:name)`.
+
+## Layout
+
+```
+config.jl          path resolution + module loading (entry point for all scripts)
+config_local.jl    machine-specific data path (gitignored)
+Project.toml       dependencies;  Manifest.toml — locked versions, Julia 1.11.7
+jl-tools/modules/  vendored analysis modules (provenance in jl-tools/SNAPSHOT.md)
+scripts/           mrst_*        reservoir flow setup & results
+                   abaqus_create_*   build Abaqus inputs (incl. pressure from MRST)
+                   abaqus_results_*  post-process & plot
+                   *.py          run inside Abaqus, not Julia (see below)
+grid/              fault-cell connectivity maps
+output/ figures/   generated results — gitignored, created on run
+```
+
+Data (Abaqus grids, MRST grid + pressure fields, SCEC CSM inputs) is archived
+separately: [Dataset DOI].
+
+## Running the Abaqus Python scripts
+
+`scripts/abaqus_export_results_*.py` execute inside Abaqus, not Julia — e.g.
+from the Abaqus CAE Python terminal:
 ```
 execfile('filename.py')
 ```
+
+## License
+Code released under the MIT License (see LICENSE). Data: CC-BY-4.0. 
