@@ -1,5 +1,8 @@
 # `include("config.jl")` at the top of every script; nothing else hardcodes a path.
 const REPO_DIR  = @__DIR__
+import Pkg
+Pkg.activate(REPO_DIR)        
+
 const TOOLS_DIR = joinpath(REPO_DIR, "jl-tools", "modules")   
 
 # --- Dataset (separate Zenodo deposit) ---------------------------------------
