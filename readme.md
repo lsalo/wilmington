@@ -10,6 +10,9 @@ Multiphase-flow and geomechanics modeling of the Wilmington Oil Field (Los Angel
 > This record will be updated with the journal citation and DOI upon acceptance.
 
 ## Requirements
+- **Don't have Julia?** Download the installer for your OS from
+  https://julialang.org/downloads/ and run it — this installs Julia and the
+  `juliaup` version manager. Then get the pinned version with `juliaup add 1.11`.
 
 - **Julia 1.11.7** — pinned in `Manifest.toml`. Install with `juliaup add 1.11`.
 - **External engines (full pipeline only):** MRST (open-source, MATLAB) and
