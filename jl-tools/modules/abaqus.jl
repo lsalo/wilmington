@@ -161,7 +161,7 @@ module Abaqus
         elset_names_inp = String[]
         nset_names_inp = String[]
         nset_inp = Any[]
-        open(join([dir_inp, fn_inp])) do f
+        open(joinpath(dir_inp, fn_inp)) do f
             # Nodes
             start_reading = false
             for line in eachline(f) 

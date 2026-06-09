@@ -54,7 +54,7 @@ output/ figures/   generated results — gitignored, created on run
 ```
 
 Data (grids, raw and processed well rates, MRST/Abaqus simulation outputs) is
-archived separately under CC-BY-4.0: [Dataset DOI — reserve on Zenodo before review].
+archived separately under CC-BY-4.0: [Dataset DOI: 10.5281/zenodo.20612866](https://doi.org/10.5281/zenodo.20612866).
 The SCEC Community Stress Model is third-party and cited at source, not included.
 See the dataset README for the full layout.
 
