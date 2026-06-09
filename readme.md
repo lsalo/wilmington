@@ -3,9 +3,11 @@
 Multiphase-flow and geomechanics modeling of the Wilmington Oil Field (Los Angeles Basin, California): reservoir flow in MRST, geomechanics in Abaqus, and Julia post-processing for subsidence, stress state, and fault stability.
 
 ## Citation
-```
-Accompanies [Authors, Year, *TBD*, DOI].
-```
+
+> Saló-Salgado, L., Silva, J. A., Plesch, A., Wolfe, F. D., Shaw, J. H. & Juanes, R. (2026), "Stress state, subsidence, and faulting in the Wilmington Oil Field, California: a multiphase flow–geomechanics modeling assessment (1936–2020)", submitted to JGR: Solid Earth.
+>
+> Preprint: arXiv:2605.16711 (https://doi.org/10.48550/arXiv.2605.16711).
+> This record will be updated with the journal citation and DOI upon acceptance.
 
 ## Requirements
 
@@ -22,15 +24,16 @@ Accompanies [Authors, Year, *TBD*, DOI].
 2. Install the locked dependencies — in the REPL: `] instantiate`.
 3. Point at the data: download the dataset deposit, then create
    `config_local.jl` next to `config.jl`:
-```julia
-   const LOCAL_DATA_DIR = "/path/to/wilmington/data"
-```
-   It is gitignored; without it, `config.jl` falls back to `../data`.
 
+```julia
+const LOCAL_DATA_DIR = "/path/to/wilmington/data"
+```
+
+   It is gitignored; without it, `config.jl` falls back to `../data`.
 4. Run a script, e.g. `include("scripts/abaqus_results_subsidence_rebound.jl")`.
    Every script starts with `include(joinpath(@__DIR__, "..", "config.jl"))`,
    which activates the environment and defines all paths (`DATA_DIR`,
-   `ABAQUS_DIR`, `OUT_DIR`, …) and the module loader `tool(:name)`.
+   `GRIDS_ABAQUS`, `OUT_DIR`, …) and the module loader `tool(:name)`.
 
 ## Layout
 
@@ -41,14 +44,16 @@ Project.toml       dependencies;  Manifest.toml — locked versions, Julia 1.11.
 jl-tools/modules/  vendored analysis modules (provenance in jl-tools/SNAPSHOT.md)
 scripts/           mrst_*                 reservoir flow setup & results
                    abaqus_create_*        build Abaqus inputs (incl. pressure from MRST)
-                   abaqus_results_*       post-process & plot
-                   abaqus_python/         run inside Abaqus, not Julia (see below)
-grid/              fault-cell connectivity maps
+                   abaqus_results_*        post-process & plot
+                   abaqus_python/          run inside Abaqus, not Julia (see below)
+grid/              fault-cell connectivity maps   <!-- TODO: confirm any surviving script reads grid/poly_cell_connectivity/; if not, move to the dataset deposit and delete this line -->
 output/ figures/   generated results — gitignored, created on run
 ```
 
-Data (Abaqus grids, MRST grid + pressure fields, SCEC CSM inputs) is archived
-separately: [Dataset DOI].
+Data (grids, raw and processed well rates, MRST/Abaqus simulation outputs) is
+archived separately under CC-BY-4.0: [Dataset DOI — reserve on Zenodo before review].
+The SCEC Community Stress Model is third-party and cited at source, not included.
+See the dataset README for the full layout.
 
 ## Abaqus Python scripts (`scripts/abaqus_python/`)
 
@@ -63,4 +68,5 @@ execfile('filename.py')
 ```
 
 ## License
-Code released under the MIT License (see LICENSE). Data: CC-BY-4.0. 
+
+Code released under the MIT License (see `LICENSE`). Data: CC-BY-4.0.
