@@ -168,18 +168,16 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
     end
     val = collect(flatten(val))
 
-    #minv, maxv = minimum(val), maximum(val)
-    if all(val .>= 0) || all(val .<= 0)
+    if hasproperty(fig_descriptor, :clim) && fig_descriptor.clim !== nothing
+        minv, maxv = fig_descriptor.clim
+    elseif all(val .>= 0) || all(val .<= 0)
         minv, maxv = minimum(val), maximum(val)
     else
-        v_max_abs = maximum(abs.(val))
-        minv, maxv = -v_max_abs, v_max_abs
+        v_max_abs = maximum(abs.(val)); minv, maxv = -v_max_abs, v_max_abs
     end
-    #minv, maxv = 0, maximum(val)
-    #minv, maxv = -60, 60
     
     fig = Figure(size=fig_descriptor.fig_size)
-    ax1 = Axis3(fig[1, 1], aspect=(1.0, 1.0, 0.5), height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
+    ax1 = Axis3(fig[1, 1], aspect=(1.0, 1.0, 0.1), height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
     #ax1.zreversed = true
     #lscene = LScene(fig[1, 1], show_axis=false, height=fig_descriptor.plot_height, valign=:center, halign=0)
     plotcbar = true
@@ -235,7 +233,7 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
     if fig_descriptor.save_fig
         ppu = fig_descriptor.target_size_in[1]*fig_descriptor.target_dpi/fig_descriptor.fig_size[1]
         # For interactive plots with GLMakie: you can also rotate, zoom, etc on the GLMakie window, and then save, and it will save the view on the fig window.
-        save(join([fig_descriptor.save_dir, fig_descriptor.title, ".png"]), fig, px_per_unit=ppu)
+        save(joinpath([fig_descriptor.save_dir, fig_descriptor.title * ".png"]), fig, px_per_unit=ppu)
     end
 
 end
