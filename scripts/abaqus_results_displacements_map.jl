@@ -100,8 +100,13 @@ fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size=(1500,1200), plot_heigh
 
 plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor, line_data=coastline)
 
-# Scratch output: coords + displacement at this panel
-out_disp = joinpath(OUT_DIR, "displacement", sim_name)
-isdir(out_disp) || mkpath(out_disp)
+# Output: coords + displacement at 1958 & u_h
 vtag = comp == "vertical" ? "u_z" : "u_h"
-writedlm(joinpath(out_disp, "nodal_coords_and_$(vtag)_$(p.year).dat"), hcat(coords_map[1], vals_nodes[1]))
+fname = "nodal_coords_and_$(vtag)_$(p.year).dat"
+if comp == "horizontal" && p.year == 1958
+    outdir = datapath("for_fault_analysis", sim_name)
+else
+    outdir = joinpath(OUT_DIR, "displacement", sim_name)
+end
+isdir(outdir) || mkpath(outdir)
+writedlm(joinpath(outdir, fname), hcat(coords_map[1], vals_nodes[1]))
