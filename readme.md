@@ -39,10 +39,10 @@ config.jl          path resolution + module loading (entry point for all scripts
 config_local.jl    machine-specific data path (gitignored)
 Project.toml       dependencies;  Manifest.toml — locked versions, Julia 1.11.7
 jl-tools/modules/  vendored analysis modules (provenance in jl-tools/SNAPSHOT.md)
-scripts/           mrst_*        reservoir flow setup & results
-                   abaqus_create_*   build Abaqus inputs (incl. pressure from MRST)
-                   abaqus_results_*  post-process & plot
-                   *.py          run inside Abaqus, not Julia (see below)
+scripts/           mrst_*                 reservoir flow setup & results
+                   abaqus_create_*        build Abaqus inputs (incl. pressure from MRST)
+                   abaqus_results_*       post-process & plot
+                   abaqus_python/         run inside Abaqus, not Julia (see below)
 grid/              fault-cell connectivity maps
 output/ figures/   generated results — gitignored, created on run
 ```
@@ -50,10 +50,14 @@ output/ figures/   generated results — gitignored, created on run
 Data (Abaqus grids, MRST grid + pressure fields, SCEC CSM inputs) is archived
 separately: [Dataset DOI].
 
-## Running the Abaqus Python scripts
+## Abaqus Python scripts (`scripts/abaqus_python/`)
 
-`scripts/abaqus_export_results_*.py` execute inside Abaqus, not Julia — e.g.
-from the Abaqus CAE Python terminal:
+These run inside Abaqus (CAE Python terminal), not Julia. They extracted the
+displacement/stress fields in the dataset's `simulation_output/abaqus/*/extracted/`
+from the solver `.odb` files. They are **not required to reproduce the figures** —
+the extracted fields are deposited directly — and are included only to document how
+those fields were produced. To run one inside Abaqus:
+
 ```
 execfile('filename.py')
 ```
