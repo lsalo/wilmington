@@ -99,7 +99,7 @@ module FaultOperations
         # Compute fault tractions
         tn, ts = fault_tractions(stress_vals[:, 2:end], stress_unit_normals[:, 2:end])    
         nodal_tractions = Matrix{Union{Int64, Float64}}(undef, length(unique_ids), 3)
-        nodal_tractions[:, 1] = unique_ids
+        nodal_tractions[:, 1] = Int.(round.(unique_ids))
         nodal_tractions[:, 2:end] = hcat(tn, ts)
 
         # Export a file with node, ts, tn, 

@@ -175,9 +175,12 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
     else
         v_max_abs = maximum(abs.(val)); minv, maxv = -v_max_abs, v_max_abs
     end
+
+    z_aspect = hasproperty(fig_descriptor, :z_aspect) ? fig_descriptor.z_aspect : 0.1
+    lift     = hasproperty(fig_descriptor, :lift)     ? fig_descriptor.lift     : 0.0
     
     fig = Figure(size=fig_descriptor.fig_size)
-    ax1 = Axis3(fig[1, 1], aspect=(1.0, 1.0, 0.1), height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
+    ax1 = Axis3(fig[1, 1], aspect=(1.0, 1.0, z_aspect), height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
     #ax1.zreversed = true
     #lscene = LScene(fig[1, 1], show_axis=false, height=fig_descriptor.plot_height, valign=:center, halign=0)
     plotcbar = true
@@ -200,16 +203,11 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
     # eg to highlight basement-sedimentary interface on faults represented as nodesets in mesh
     if node_coords_plot !== nothing 
         mycolor = RGBA(0, 0, 0, 1)
-        adjust_coords = true
         for line in eachindex(node_coords_plot)
-            if adjust_coords == true
-                vx = node_coords_plot[line][:, 1].*1.000001
-                vy = node_coords_plot[line][:, 2].*1.000001
-            else
-                vx = node_coords_plot[line][:, 1]
-                vy = node_coords_plot[line][:, 2]
-            end
-            scatter!(ax1, vx, vy, node_coords_plot[line][:, 3], color=mycolor, markersize=4, marker=:circle)
+            vx = node_coords_plot[line][:, 1]
+            vy = node_coords_plot[line][:, 2]
+            vz = node_coords_plot[line][:, 3] .+ lift
+            scatter!(ax1, vx, vy, vz, color=mycolor, markersize=4, marker=:circle)
         end
     end
 
