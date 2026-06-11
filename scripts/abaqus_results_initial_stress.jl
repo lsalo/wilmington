@@ -1,54 +1,75 @@
 #=
-Script to visualize stresses at elements (we import values at integration points from abaqus)
+Sanity check: stresses resolved after the geostatic step should match the initial
+conditions imposed (per variant). Produces a 3-panel I.C.-vs-Geostatic scatter for
+each model variant; not a paper figure, deposited as evidence the initialization is correct.
 =#
+include(joinpath(@__DIR__, "..", "config.jl"))
 
-# Startup
-cd(@__DIR__)
-using Pkg
-Pkg.activate(@__DIR__)
-
-using HDF5
-using DelimitedFiles
+using HDF5, DelimitedFiles, LaTeXStrings, Printf
 using CairoMakie
 CairoMakie.activate!()
 
-# Directories and options
-abaqus_dir = "C:/Users/lsalo/abaqus/simulation_data/wilmington/output/plastic_ini/extracted/S/ENTIRE_DOMAIN/"
-dir_in = "C:/Users/lsalo/julia/output/wilmington/"
-figs_dir = "C:/Users/lsalo/julia/graphics/figs/wilmington/test/" 
+sim_name = "plastic-120"     # ← switch variant
 
-abaqus_fn = "Geostatic.h5"
+# initial-stress file per variant (same mapping as the reservoir script's VARIANT_CFG)
+const STRESS_INI = Dict(
+    "plastic-130" => "initial_stress_rotated_criticallyStressed_mu0.6.inp",
+    "plastic-120" => "initial_stress_rotated_sed_mu0.3_aphi1.25_bas_mu0.6_aphi1.75.inp",
+)
 
-# Read stress data
-file = h5open(join([abaqus_dir, abaqus_fn]), "r")
-abq_out = [read(file[name]) for name in ["Sxx", "Syy", "Szz", "Sxy", "Sxz", "Syz"]]
-abq_out = hcat(abq_out...)
-stress_ini = readdlm(join([dir_in, "initial_stress_rotated_criticallyStressed_mu0.6.inp"]), ',')
+# Per variant: physical component → (I.C. column in stress_ini, geostatic column in abq_out, label, color)
+# abq_out is read by name (Sxx,Syy,Szz) so its columns are always physical 1,2,3.
+# stress_ini stores s_11,s_22,s_33 in cols 2,3,4 — physical order differs by variant.
+const COMP_MAP = Dict(
+    "plastic-130" => [(2, 1, L"\sigma^\text{eff}_{xx}", :black),   # s_11 = xx
+                      (3, 2, L"\sigma^\text{eff}_{yy}", :red),     # s_22 = yy
+                      (4, 3, L"\sigma^\text{eff}_{zz}", :blue)],   # s_33 = zz
+    "plastic-120" => [(2, 1, L"\sigma^\text{eff}_{xx}", :black),   # s_11 = xx
+                      (3, 2, L"\sigma^\text{eff}_{yy}", :red),     # s_33 = yy
+                      (4, 3, L"\sigma^\text{eff}_{zz}", :blue)],   # s_22 = zz
+)
 
-# Plot comparison
-fig_size = (900, 400)
-f = Figure(size=fig_size)
-ax = Axis(f[1, 1], xlabel = L"\sigma^\text{eff}_{11} \text{ (I.C.)} \; \text{ [MPa]}", ylabel = L"\sigma^\text{eff}_{11} \text{ (Geostatic)} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-sc1 = scatter!(ax, 1e-6*stress_ini[:, 2], 1e-6*abq_out[:, 1], markersize = 6, color=RGBAf(0,0,0,0), strokecolor=:black, strokewidth=0.5, label=L"\text{ Data}")
-ln1 = lines!(ax, [-650, 0], [-650, 0], color = RGBAf(0.8, 0.8, 0.8, 1), linewidth = 1.25, linestyle = :solid, label=L" 1:1")
-xlims!(ax, -600, 0)
-ylims!(ax, -600, 0)
-axislegend(position = :lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
+const SAVE_TO_DEPOSIT = true
+figdir = SAVE_TO_DEPOSIT ? datapath("figures", "abaqus", sim_name) : FIGS_DIR
+isdir(figdir) || mkpath(figdir)
 
-ax = Axis(f[1, 2], xlabel = L"\sigma^\text{eff}_{22} \text{ (I.C.)} \; \text{ [MPa]}", ylabel = L"\sigma^\text{eff}_{22} \text{ (Geostatic)} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-sc1 = scatter!(ax, 1e-6*stress_ini[:, 3], 1e-6*abq_out[:, 2], markersize = 6, color=RGBAf(0,0,0,0), strokecolor=:blue, strokewidth=0.5, label=L"\text{ Data}")
-ln1 = lines!(ax, [-250, 0], [-250, 0], color = RGBAf(0.8, 0.8, 0.8, 1), linewidth = 1.25, linestyle = :solid, label=L" 1:1")
-xlims!(ax, -211, 0)
-ylims!(ax, -211, 0)
+# Geostatic stress (resolved) and imposed initial stress
+geo_file = joinpath(abaqus_extracted(sim_name), "S", "ENTIRE_DOMAIN", "Geostatic_elements.h5")
+abq_out = h5open(geo_file, "r") do file
+    hcat([read(file[name]) for name in ("Sxx","Syy","Szz","Sxy","Sxz","Syz")]...)
+end
+stress_ini = readdlm(joinpath(FOR_ABAQUS_STRESS, STRESS_INI[sim_name]), ',')
 
-ax = Axis(f[1, 3], xlabel = L"\sigma^\text{eff}_{33} \text{ (I.C.)} \; \text{ [MPa]}", ylabel = L"\sigma^\text{eff}_{33} \text{ (Geostatic)} \; \text{ [MPa]}", xlabelsize = 16, ylabelsize = 16)
-sc1 = scatter!(ax, 1e-6*stress_ini[:, 4], 1e-6*abq_out[:, 3], markersize = 6, color=RGBAf(0,0,0,0), strokecolor=:red, strokewidth=0.5, label=L"\text{ Data}")
-ln1 = lines!(ax, [-250, 0], [-250, 0], color = RGBAf(0.8, 0.8, 0.8, 1), linewidth = 1.25, linestyle = :solid, label=L" 1:1")
-xlims!(ax, -191, 0)
-ylims!(ax, -191, 0)
+# align both to ascending element-id order (HDF5 NODE_LABEL is element-keyed but unsorted)
+nl = h5open(geo_file, "r") do file; read(file["NODE_LABEL"]); end
+abq_out    = abq_out[sortperm(nl), :]
+stress_ini = stress_ini[sortperm(stress_ini[:, 1]), :]
+
+# 3-panel comparison: imposed (I.C.) vs resolved (Geostatic), σ11 / σ22 / σ33
+f = Figure(size=(1200, 420))
+cmap = COMP_MAP[sim_name]
+panels = COMP_MAP[sim_name]
+for (p, (col_ini, col_geo, sym, c)) in enumerate(panels)
+    x = 1e-6 .* stress_ini[:, col_ini]
+    y = 1e-6 .* abq_out[:, col_geo]
+    lo = min(minimum(x), minimum(y)); hi = max(maximum(x), maximum(y))
+    pad = 0.03 * (hi - lo)
+    lims = (lo - pad, hi + pad)            # shared x/y range so the box is square and frames all data
+    
+    xlab = latexstring(sym.s * raw" \text{ (I.C.)} \; [\text{MPa}]")
+    ylab = latexstring(sym.s * raw" \text{ (Geostatic)} \; [\text{MPa}]")
+    ax = Axis(f[1, p], xlabel=xlab, ylabel=ylab, xlabelsize=16, ylabelsize=16, aspect=1, xreversed=true)
+    scatter!(ax, 1e-6 .* stress_ini[:, col_ini], 1e-6 .* abq_out[:, col_geo],
+             markersize=6, color=RGBAf(0,0,0,0), strokecolor=c, strokewidth=0.5, label=L"\text{ Data}")
+    lines!(ax, collect(lims), collect(lims), color=RGBAf(0.8,0.8,0.8,1), linewidth=1.25, label=L" 1:1")
+    xlims!(ax, 0, lims[1]); ylims!(ax, lims...)
+    p == 1 && axislegend(position=:lt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8))
+
+   res = y .- x                                  # geostatic − I.C., MPa (both already ×1e-6)
+    @printf("%-6s  bias = %+7.3f   std = %6.3f   P95|res| = %6.3f  MPa\n",
+            sym.s, mean(res), std(res), quantile(abs.(res), 0.95))
+end
 f
 
-target_dpi=300 
-target_size_in=(9,6)
-ppu = target_size_in[1]*target_dpi/fig_size[1]
-save(join([figs_dir, "ic_vs_geostatic.png"]), f, px_per_unit = ppu)
+ppu = 9 * 300 / 900
+SAVE_TO_DEPOSIT && save(joinpath(figdir, "ic_vs_geostatic_$(sim_name).png"), f, px_per_unit=ppu)
