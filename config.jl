@@ -29,7 +29,7 @@ const RAW_PROD = joinpath(RAW_WELL_DATA, "Production")
 # Intermediates (produced by scripts, then read back)
 const FOR_MRST_FLOWRATES  = datapath("for_mrst_flowrates")  # *_m3_s_mrst_trimester.dat
 const FOR_ABAQUS_STRESS   = datapath("for_abaqus_stress", "initial")   # initial_stress_*, peff_*, centroids, ...
-const FOR_ABAQUS_PRESSURE = datapath("for_abaqus_pressure")
+const FOR_ABAQUS_PRESSURE = datapath("for_abaqus_pressure", "nodal_dp_1936_to_2020_tri")
 const NODAL_DP_DIR = joinpath(FOR_ABAQUS_PRESSURE, "nodal_dp_1936_to_2020_tri")
 
 # Simulation output (curated: MRST result_data, Abaqus extracted/)
