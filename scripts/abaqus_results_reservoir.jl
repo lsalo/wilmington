@@ -16,7 +16,7 @@ include(tool(:abaqus)); using .Abaqus        # get_connectivity_from_inp
 # Per-variant configuration (single source of truth for the coupled options)
 const VARIANT_CFG = Dict(
     "plastic-130" => (regime = "reverse",       # CSM, critically stressed
-                      stress_ini = "initial_stress_rotated_criticallyStressed_mu0.6.inp",
+                      stress_ini = "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.07.inp",
                       pb = (1.18, 0.25),
                       q_Fc = vcat(Vector{}(0:1:29), 29.01:0.01:30.1),
                       R = 0.2,
@@ -34,7 +34,7 @@ const VARIANT_CFG = Dict(
 )
 
 # Select variant here
-sim_name = "plastic-120"            
+sim_name = "plastic-130"            
 cfg      = VARIANT_CFG[sim_name]
 node_select = "max_subsidence"
 fn_inp   = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
