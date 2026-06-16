@@ -55,8 +55,6 @@ isdir(figdir) || mkpath(figdir)
 ## ── Read initial stress / effective pressure / geometry ──────────────────────
 nodal_depth  = readdlm(joinpath(FOR_ABAQUS_STRESS, "nodal_depth.dat"), ',')
 peff_ini_nod = readdlm(joinpath(FOR_ABAQUS_STRESS, cfg.peff_fn), ',')
-# (initial stress is read for the p-q scatter in the cap-envelope figure, not needed for Fig. 9;
-#  kept minimal here since Fig. 3 is drawn elsewhere.)
 
 ## ── Hardening curve p_b at each reference depth (Eq. 20) ─────────────────────
 nc = Int(length(Z_PT) / 2)
