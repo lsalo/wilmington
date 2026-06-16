@@ -2,6 +2,8 @@
 
 Multiphase-flow and geomechanics modeling of the Wilmington Oil Field (Los Angeles Basin, California): reservoir flow in MRST, geomechanics in Abaqus, and Julia post-processing for subsidence, stress state, and fault stability.
 
+[![DOI](https://zenodo.org/badge/719353093.svg)](https://doi.org/10.5281/zenodo.20723535)
+
 ## Citation
 
 > Saló-Salgado, L., Silva, J. A., Plesch, A., Wolfe, F. D., Shaw, J. H. & Juanes, R. (2026), "Stress state, subsidence, and faulting in the Wilmington Oil Field, California: a multiphase flow–geomechanics modeling assessment (1936–2020)", in review.
