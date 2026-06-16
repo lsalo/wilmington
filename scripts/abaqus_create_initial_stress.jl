@@ -35,7 +35,7 @@ include(tool(:abaqus)); using .Abaqus      # get_connectivity_from_inp, get_elem
 field = "heterogeneous"                  # "a_fit" (plastic-130, Fig 8a) | "heterogeneous" (plastic-120, Fig 8b)
                                  #   | "normal" | "strike-slip" | "reverse"  (exploratory, not in paper)
 const READ_CSM_DATA  = false     # true → fit A_phi(z) from SCEC CSM (needs SCEC_DIR); false → read deposited coef
-const SAVE_TO_DEPOSIT = true    # true → write .inp/.dat/figures into the deposit
+const SAVE_TO_DEPOSIT = false    # true → write .inp/.dat/figures into the deposit
 const SHOW_PLOT      = true      # build Fig. 8 panel for the selected field
 
 # Local path to the SCEC CSM archive (only used when READ_CSM_DATA=true).
@@ -203,6 +203,10 @@ if SAVE_TO_DEPOSIT
     writedlm(joinpath(out_dir, "id_pico.dat"),          elements_inp[4][:, 1])
     writedlm(joinpath(out_dir, "id_overPico.dat"),      elements_inp[6][:, 1])
     writedlm(joinpath(out_dir, "id_bottomRanger.dat"),  elements_inp[2][:, 1])
+
+    id_above_bas = findall(name -> !occursin("basement", lowercase(name)) && name != "free_elements", elset_names_inp)
+    id_all_above_basement = vcat([elements_inp[i][:, 1] for i in id_above_bas]...)
+    writedlm(joinpath(out_dir, "id_all_above_basement.dat"), id_all_above_basement)
 end
 
 ## ── Fig. 8: initial total stress magnitudes vs depth (central column) ─────────
