@@ -4,7 +4,7 @@ Multiphase-flow and geomechanics modeling of the Wilmington Oil Field (Los Angel
 
 ## Citation
 
-> Saló-Salgado, L., Silva, J. A., Plesch, A., Wolfe, F. D., Shaw, J. H. & Juanes, R. (2026), "Stress state, subsidence, and faulting in the Wilmington Oil Field, California: a multiphase flow–geomechanics modeling assessment (1936–2020)", submitted to JGR: Solid Earth.
+> Saló-Salgado, L., Silva, J. A., Plesch, A., Wolfe, F. D., Shaw, J. H. & Juanes, R. (2026), "Stress state, subsidence, and faulting in the Wilmington Oil Field, California: a multiphase flow–geomechanics modeling assessment (1936–2020)", in review.
 >
 > Preprint: arXiv:2605.16711 (https://doi.org/10.48550/arXiv.2605.16711).
 > This record will be updated with the journal citation and DOI upon acceptance.
@@ -33,7 +33,7 @@ const LOCAL_DATA_DIR = "/path/to/wilmington/data"
 ```
 
    It is gitignored; without it, `config.jl` falls back to `../data`.
-4. Run a script, e.g. `include("scripts/abaqus_results_subsidence_rebound.jl")`.
+4. Run a script, e.g. `include("scripts/abaqus_results_fault_tractions.jl")`.
    Every script starts with `include(joinpath(@__DIR__, "..", "config.jl"))`,
    which activates the environment and defines all paths (`DATA_DIR`,
    `GRIDS_ABAQUS`, `OUT_DIR`, …) and the module loader `tool(:name)`.
@@ -45,16 +45,16 @@ config.jl          path resolution + module loading (entry point for all scripts
 config_local.jl    machine-specific data path (gitignored)
 Project.toml       dependencies;  Manifest.toml — locked versions, Julia 1.11.7
 jl-tools/modules/  vendored analysis modules (provenance in jl-tools/SNAPSHOT.md)
-scripts/           mrst_*                 reservoir flow setup & results
-                   abaqus_create_*        build Abaqus inputs (incl. pressure from MRST)
-                   abaqus_results_*        post-process & plot
-                   abaqus_python/          run inside Abaqus, not Julia (see below)
-grid/              fault-cell connectivity maps   <!-- TODO: confirm any surviving script reads grid/poly_cell_connectivity/; if not, move to the dataset deposit and delete this line -->
+scripts/           mrst_*                                   reservoir flow setup & results
+                   abaqus_create_*                          build Abaqus inputs (incl. pressure from MRST)
+                   abaqus_results_*                         post-process & plot
+                   abaqus_python/                           run inside Abaqus, not Julia (see below)
+                   mrst/TransmissibilityWithMultipliers     state fcn to modify face transmissibilities in MRST.  
 output/ figures/   generated results — gitignored, created on run
 ```
 
 Data (grids, raw and processed well rates, MRST/Abaqus simulation outputs) is
-archived separately under CC-BY-4.0: [Dataset DOI: 10.5281/zenodo.20612866](https://doi.org/10.5281/zenodo.20612866).
+archived separately under CC-BY-4.0. Dataset DOI: [10.5281/zenodo.20612866](https://doi.org/10.5281/zenodo.20612866).
 The SCEC Community Stress Model is third-party and cited at source, not included.
 See the dataset README for the full layout.
 
@@ -72,4 +72,7 @@ execfile('filename.py')
 
 ## License
 
-Code released under the MIT License (see `LICENSE`). Data: CC-BY-4.0.
+Code released under the MIT License (see `LICENSE`), **except**
+`scripts/mrst/TransmissibilityWithMultipliers.m`, which extends the MATLAB Reservoir
+Simulation Toolbox (MRST) and is therefore distributed under MRST's GNU GPL v3 license
+(see the footer in that file). Data: CC-BY-4.0.
