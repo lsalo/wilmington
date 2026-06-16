@@ -2,7 +2,7 @@
 
 julia_version = "1.11.7"
 manifest_format = "2.0"
-project_hash = "086f2de97051f03477c041b11e11fcbf1421be0b"
+project_hash = "570786e0c4c3e8134d58e8b879f961e546947ac7"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1506,9 +1506,9 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
 
 [[deps.StatsModels]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Printf", "REPL", "ShiftedArrays", "SparseArrays", "StatsAPI", "StatsBase", "StatsFuns", "Tables"]
-git-tree-sha1 = "9022bcaa2fc1d484f1326eaa4db8db543ca8c66d"
+git-tree-sha1 = "b117c1fe033a04126780c898e75c7980bf676df3"
 uuid = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
-version = "0.7.4"
+version = "0.7.7"
 
 [[deps.StringManipulation]]
 deps = ["PrecompileTools"]
