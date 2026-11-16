@@ -9,7 +9,7 @@ Map sections are 3D (GLMakie) and REQUIRE A DISPLAY; the time series (CairoMakie
 include(joinpath(@__DIR__, "..", "config.jl"))
 
 using Colors, ColorSchemes, LaTeXStrings
-using DelimitedFiles, Statistics, HDF5
+using DelimitedFiles, Statistics
 include(tool(:faultops));  using .FaultOperations   # face_normals_and_centroids, tractions_from_sij_and_n
 include(tool(:abaqus));    using .Abaqus            # get_connectivity_from_inp, get_face_connectivity_*
 include(tool(:arrayops));  using .ArrayOps          # reduce_matrix_with_repeated_ids, renumber_array_1_to_n
@@ -74,17 +74,8 @@ for nset in eachindex(case.nsets)
     for (i, fn) in enumerate(fns)
         stem = splitext(fn)[1]
         if compute_tractions
-            ext = splitext(fn)[2]
-            nodal_stress = if ext == ".dat"
-                readdlm(joinpath(src_dir, fn), ',', Float64, '\n', skipstart=1)
-            elseif ext == ".h5"
-                ns = h5open(joinpath(src_dir, fn), "r") do f
-                    hcat(read(f,"NODE_LABEL"), read(f,"Sxx"), read(f,"Sxy"), read(f,"Sxz"), read(f,"Syy"), read(f,"Syz"), read(f,"Szz"))
-                end
-                reduce_matrix_with_repeated_ids(ns, "mean")
-            else
-                error("Unsupported stress extension: $ext ($fn)")
-            end
+            splitext(fn)[2] == ".dat" || error("Expected .dat stress file, got $fn")
+            nodal_stress = readdlm(joinpath(src_dir, fn), ',', Float64, '\n', skipstart=1)   # NODE_LABEL, Sxx, Syy, Szz, Sxy, Sxz, Syz
             wdir = joinpath(tractions_write_dir, case.nsets[nset]); isdir(wdir) || mkpath(wdir)
             push!(nodal_tractions[nset],
                   tractions_from_sij_and_n(nodal_stress, nodes_inp, face_unit_normals[nset], face_centroids[nset], wdir, "tractions_$(stem).dat"))
@@ -93,6 +84,8 @@ for nset in eachindex(case.nsets)
             data = readdlm(joinpath(tractions_read_dir, case.nsets[nset], "tractions_$(stem).dat"), '\t', Float64, '\n')
             push!(nodal_tractions[nset], data)
         end
+
+        i == 1 && check_t0_tractions(nodal_tractions[nset][1], case.nsets[nset])   # faults reach the basement: μ = 0.6
 
         if i == 1
             cff0[nset] = nodal_tractions[nset][1][:, end] .+ mu*nodal_tractions[nset][1][:, 2]

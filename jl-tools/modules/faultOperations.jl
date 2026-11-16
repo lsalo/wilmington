@@ -12,8 +12,16 @@ module FaultOperations
     include("./arrayOps.jl")
     using .ArrayOps
     
-    export fault_failure, fault_tractions, tractions_from_sij_and_n, face_unit_normal, face_centroid, face_normals_and_centroids
+    export check_t0_tractions, fault_failure, fault_tractions, tractions_from_sij_and_n, face_unit_normal, face_centroid, face_normals_and_centroids
 
+    function check_t0_tractions(tr0::AbstractMatrix, label::AbstractString=""; mu_max::Real=0.61)
+        """Sanity check at t0: compressive normal tractions and |τ0| ≤ mu_max·|σ'n0| (tension positive).
+        mu_max = largest friction used in the stress initialization (+ tolerance)."""
+        @assert all(tr0[:, 2] .< 0) "$label: t0 normal tractions not all compressive"
+        @assert all(tr0[:, 3] .<= mu_max .* abs.(tr0[:, 2])) "$label: t0 shear exceeds μ = $mu_max — check stress component order"
+        return nothing
+    end
+    
     function fault_failure(tractions::AbstractMatrix, mu::Union{Number, Vector})
         """
         INPUTS

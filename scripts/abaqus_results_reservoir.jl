@@ -5,7 +5,6 @@ effective-stress history, and surface subsidence vs. field data (Kosloff et al.,
 include(joinpath(@__DIR__, "..", "config.jl"))
 
 using LinearAlgebra                          # norm
-using HDF5                                   # element stress reads
 using DelimitedFiles
 using CairoMakie
 CairoMakie.activate!()
@@ -40,7 +39,7 @@ node_select = "max_subsidence"
 fn_inp   = "WilmingtonMesh_AllFaults_Rotated_Coarse.inp"
 ext = abaqus_extracted(sim_name)             # .../simulation_output/abaqus/<variant>/extracted
 
-abaqus_dir_el  = joinpath(ext, "S", "ENTIRE_DOMAIN")       # element stresses (h5)
+abaqus_dir_el  = joinpath(ext, "S", "ENTIRE_DOMAIN")       # element stresses (.dat: ELEMENT_ID, Sxx, Syy, Szz, Sxy, Sxz, Syz)
 abaqus_dir_nod = joinpath(ext, "U", "TOPRANGERSURFACE")    # nodal disp, top Ranger
 abaqus_dir_top = joinpath(ext, "U", "TOPBC")               # nodal disp, top boundary
 abaqus_fn_el  = sort(readdir(abaqus_dir_el),  by=sort_steps)
@@ -48,7 +47,7 @@ abaqus_fn_nod = sort(readdir(abaqus_dir_nod), by=sort_steps)
 abaqus_fn_top = sort(readdir(abaqus_dir_top), by=sort_steps)
 
 # Set true to (re)generate the canonical figures shipped in the dataset; false → scratch FIGS_DIR.
-const SAVE_TO_DEPOSIT = true
+const SAVE_TO_DEPOSIT = false
 figdir = SAVE_TO_DEPOSIT ? datapath("figures", "abaqus", sim_name) : FIGS_DIR
 isdir(figdir) || mkpath(figdir)
 savefig(name) = joinpath(figdir, name)
@@ -92,10 +91,8 @@ s     = Vector{Vector{Float64}}(undef, n_el)
 p_eff = Vector{Float32}(undef, n_el)
 q     = Vector{Float32}(undef, n_el)
 for i in 1:n_el
-    h5open(joinpath(abaqus_dir_el, abaqus_fn_el[i]), "r") do file
-        abq  = hcat([read(file[name]) for name in ("Sxx","Syy","Szz","Sxy","Sxz","Syz")]...)
-        s[i] = abq[id_element, :]
-    end
+    abq  = readdlm(joinpath(abaqus_dir_el, abaqus_fn_el[i]), ',', Float64, '\n', skipstart=1)
+    s[i] = abq[findfirst(abq[:, 1] .== id_element), 2:7]
     p_eff[i] = -(1/3)*sum(s[i][1:3])
     q[i]     = sqrt(0.5*((s[i][1]-s[i][2])^2 + (s[i][2]-s[i][3])^2 + (s[i][3]-s[i][1])^2) + 6*(s[i][4]^2 + s[i][5]^2 + s[i][6]^2))
 end
@@ -177,7 +174,7 @@ elseif cfg.regime == "strike-slip"
 end
 axislegend(position = :lb, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8), labelsize=14) 
 f
-save(savefig("stress_path_ranger_$(node_select)_$(sim_name).pdf"), f, pt_per_unit=1)
+#save(savefig("stress_path_ranger_$(node_select)_$(sim_name).pdf"), f, pt_per_unit=1)
 
 # Stress ratios figure
 s_xx = [x[1] for x in s]
@@ -208,7 +205,7 @@ ln3 = lines!(ax, t, s_zz_norm, color = RGBAf(0, 0, 1, 1), linewidth = 1.0, label
 xlims!(ax, 1935, 2020)
 ylims!(ax, 0.5, 2.0)
 f
-save(savefig("stress_ratios_ranger_$(node_select)_$(sim_name).pdf"), f, pt_per_unit=1)
+#save(savefig("stress_ratios_ranger_$(node_select)_$(sim_name).pdf"), f, pt_per_unit=1)
 
 # 
 # Plot 2: max(u_z) vs t, comparison with subsidence data
@@ -225,4 +222,4 @@ ylims!(ax, -10, 0)
 #ylims!(ax, 0, 10)
 axislegend(position = :rt, framevisible=true, framewidth=0.5, backgroundcolor=RGBAf(1,1,1,0.8)) 
 f
-save(savefig("u3_surface_$(sim_name)_subsidence.pdf"), f, pt_per_unit=1)
+#save(savefig("u3_surface_$(sim_name)_subsidence.pdf"), f, pt_per_unit=1)

@@ -9,7 +9,7 @@ Map sections are 3D (GLMakie) and REQUIRE A DISPLAY; the time series (CairoMakie
 include(joinpath(@__DIR__, "..", "config.jl"))
 
 using Colors, ColorSchemes, LaTeXStrings
-using DelimitedFiles, Statistics, HDF5
+using DelimitedFiles, Statistics
 include(tool(:faultops));  using .FaultOperations   # face_normals_and_centroids, tractions_from_sij_and_n
 include(tool(:abaqus));    using .Abaqus            # get_connectivity_from_inp, get_face_connectivity_*
 include(tool(:arrayops));  using .ArrayOps          # reduce_matrix_with_repeated_ids, renumber_array_1_to_n
@@ -29,7 +29,7 @@ const CASES = Dict(
     "ranger" => (nset="TopRangerSurface", surface="Top Ranger",
                  map_year=1958, map_cols=[2,3,1],   # Δσ_n, Δ|τ|, DCFF  (17c)
                  azi=-0.5π, elev=0.5π, z_aspect=0.1, lift=0.0,
-                 clims=Dict(1 => (-60, 60))),
+                 clims=Dict(1 => (-35, 35), 2 => (-55, 55), 3 => (-20, 20))),
 )
 case = CASES["ranger"]      # ← select surface here
 
@@ -76,22 +76,15 @@ cff0 = Float64[]
 for (i, fn) in enumerate(fns)
     stem = splitext(fn)[1]
     if compute_tractions
-        ext = splitext(fn)[2]
-        nodal_stress = if ext == ".dat"
-            readdlm(joinpath(src_dir, fn), ',', Float64, '\n', skipstart=1)
-        elseif ext == ".h5"
-            ns = h5open(joinpath(src_dir, fn), "r") do f
-                hcat(read(f,"NODE_LABEL"), read(f,"Sxx"), read(f,"Sxy"), read(f,"Sxz"), read(f,"Syy"), read(f,"Syz"), read(f,"Szz"))
-            end
-            reduce_matrix_with_repeated_ids(ns, "mean")
-        else
-            error("Unsupported stress extension: $ext ($fn)")
-        end
+        splitext(fn)[2] == ".dat" || error("Expected .dat stress file, got $fn")
+        nodal_stress = readdlm(joinpath(src_dir, fn), ',', Float64, '\n', skipstart=1)   # NODE_LABEL, Sxx, Syy, Szz, Sxy, Sxz, Syz
         wdir = joinpath(tractions_write_dir, case.nset); isdir(wdir) || mkpath(wdir)
         push!(nodal_tractions, tractions_from_sij_and_n(nodal_stress, nodes_inp, face_unit_normals[1], face_centroids[1], wdir, "tractions_$(stem).dat"))
     else
         push!(nodal_tractions, readdlm(joinpath(tractions_read_dir, case.nset, "tractions_$(stem).dat"), '\t', Float64, '\n'))
     end
+
+    i == 1 && check_t0_tractions(nodal_tractions[1], case.nset)   
 
     if i == 1
         global cff0 = nodal_tractions[1][:, end] .+ mu*nodal_tractions[1][:, 2]
@@ -125,7 +118,7 @@ f = Figure(size=(900, 250))
 ax = Axis(f[1,1], xlabel=L"t \;[\text{y}]", ylabel=L"\text{DCFF}\;[\text{bar}]", xticks=1940:20:2020)
 lines!(ax, t, dcff_avg ./ 1e5, color=:black, linewidth=1.5, label=L"\text{Mean}")
 lines!(ax, t, dcff_95  ./ 1e5, color=ut_orange, linewidth=1.5, label=L"\text{P95}")
-xlims!(ax, 1935, 2020); axislegend(position=:rt, framevisible=true, backgroundcolor=RGBAf(1,1,1,0.8))
+xlims!(ax, 1935, 2020); axislegend(position=:lt, framevisible=true, backgroundcolor=RGBAf(1,1,1,0.8))
 ax = Axis(f[1,2], xlabel=L"t \;[\text{y}]", ylabel=L"\frac{\Delta\overline{\text{CFF}}}{\Delta t}\;\left[\frac{\text{bar}}{\text{y}}\right]", xticks=1940:20:2020)
 lines!(ax, tmid, diff(cff_avg ./ 1e5) ./ diff(t), color=:black, linewidth=1.5)
 xlims!(ax, 1935, 2020)
