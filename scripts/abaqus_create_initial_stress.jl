@@ -32,7 +32,7 @@ CairoMakie.activate!()
 include(tool(:abaqus)); using .Abaqus      # get_connectivity_from_inp, get_element_centroids_inp
 
 ## ── Options ──────────────────────────────────────────────────────────────────
-field = "heterogeneous"                  # "a_fit" (plastic-130, Fig 8a) | "heterogeneous" (plastic-120, Fig 8b)
+field = "a_fit"                  # "a_fit" (plastic-130, Fig 8a) | "heterogeneous" (plastic-120, Fig 8b)
                                  #   | "normal" | "strike-slip" | "reverse"  (exploratory, not in paper)
 const READ_CSM_DATA  = false     # true → fit A_phi(z) from SCEC CSM (needs SCEC_DIR); false → read deposited coef
 const SAVE_TO_DEPOSIT = false    # true → write .inp/.dat/figures into the deposit
