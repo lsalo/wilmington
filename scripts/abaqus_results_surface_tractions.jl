@@ -31,7 +31,7 @@ const CASES = Dict(
                  azi=-0.5π, elev=0.5π, z_aspect=0.1, lift=0.0,
                  clims=Dict(1 => (-35, 35), 2 => (-55, 55), 3 => (-20, 20))),
 )
-case = CASES["ranger"]      # ← select surface here
+case = CASES["pico"]      # ← select surface here
 
 ext_S     = joinpath(abaqus_extracted(sim_name), "S")
 FAULT_DIR = datapath("for_fault_analysis", sim_name)
@@ -154,9 +154,14 @@ for col in case.map_cols
     vals_nodes = Vector{}(undef, 1)
     vals_nodes[1] = values_plot[:, col] ./ 1e5
     ttl = "$(case.nset)_$(col_tags[col])_$(sim_name)_$(case.map_year)"
+    xl, yl = extrema(coords_map[1][:, 1]), extrema(coords_map[1][:, 2])
     fig_descriptor = (cmap=cgrad(:balance), cbar_label=col_labels[col], clim=get(case.clims, col, nothing),
         fig_size=(1200,900), plot_height=800, cbar_height=300,
         plot_azi=case.azi, plot_elev=case.elev, z_aspect=case.z_aspect, lift=case.lift, plot_linew=0.2,
+        equal_xy=true, fontsize_annot=40, coast_linewidth=2,
+        scalebar_km = col == first(case.map_cols) ? 5 : nothing,
+        scalebar_xy = (xl[1] + 0.33 * (xl[2] - xl[1]), yl[1] + 0.05 * (yl[2] - yl[1])),
+        north_arrow = col == first(case.map_cols),
         xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])),
         ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])),
         save_fig=SAVE_TO_DEPOSIT, save_dir=figdir, title=ttl, target_dpi=400, target_size_in=(12,9))
