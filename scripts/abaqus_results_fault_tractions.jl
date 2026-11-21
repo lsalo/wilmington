@@ -68,7 +68,7 @@ dcff = [Vector{Any}() for _ in eachindex(case.nsets)]
 cff  = Vector{Matrix{Float64}}(undef, length(case.nsets))
 cff0 = [Vector{Any}() for _ in eachindex(case.nsets)]
 for nset in eachindex(case.nsets)
-    src_dir = joinpath(ext_S, case.nsets[nset])
+    src_dir = joinpath(ext_S, uppercase(case.nsets[nset]))
     fns = sort(readdir(src_dir), by=sort_steps)
     cff_cols = Vector{Vector{Float64}}()
     for (i, fn) in enumerate(fns)
@@ -162,7 +162,7 @@ col_tags   = Dict(1 => "dcff", 2 => "dsn", 3 => "dtau")
 
 for yr in case.map_years
     step = YEAR_TO_STEP[yr]
-    fns  = sort(readdir(joinpath(ext_S, case.map_nsets[1])), by=sort_steps)
+    fns  = sort(readdir(joinpath(ext_S, uppercase(case.map_nsets[1]))), by=sort_steps)
     idx  = findfirst(f -> occursin("step_$(step)_", f), fns)
     isnothing(idx) && error("year $yr (step_$(step)) not found in $(case.map_nsets[1])")
 

@@ -67,7 +67,7 @@ id_in_thresh = vec(all(hcat(coords_map[1][:,1] .>= xmin, coords_map[1][:,1] .<= 
                             coords_map[1][:,2] .>= ymin, coords_map[1][:,2] .<= ymax), dims=2))
 
 ## ---- Tractions → CFF / DCFF ----------------------------------------------------------
-src_dir = joinpath(ext_S, case.nset)
+src_dir = joinpath(ext_S, uppercase(case.nset))
 fns = sort(readdir(src_dir), by=sort_steps)
 nodal_tractions = Vector{Any}()
 dcff = Vector{Any}()

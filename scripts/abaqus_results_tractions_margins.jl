@@ -14,7 +14,7 @@ include(tool(:faultops));  using .FaultOperations
 ## ---- Configuration -------------------------------------------------------------------
 sim_name  = "plastic-120"
 mu        = 0.6
-nsets     = ["Tear_Fault_9"]   # e.g. "Wilmington", "Tear_Fault_9"
+nsets     = ["TopRangerSurface"]   # e.g. "Wilmington", "Tear_Fault_9"
 uh_filter = false                                  # Fig 17 filter (surface ‖u_h‖ ≥ 1 m); false for faults
 
 ext_S     = joinpath(abaqus_extracted(sim_name), "S")
@@ -30,7 +30,7 @@ xmin, xmax = extrema(uh[above, 1]); ymin, ymax = extrema(uh[above, 2])
 ## ---- Margin vs. DCFF ----------------------------------------------------------------
 @printf("%-18s %7s %10s %10s %10s %10s %10s\n", "nodeset", "nodes", "σn0_med", "τ0_med", "M_med", "DCFFmax", "frac_fail")
 for nset in nsets
-    fns = sort(readdir(joinpath(ext_S, nset)), by=sort_steps)
+    fns = sort(readdir(joinpath(ext_S, uppercase(nset))), by=sort_steps)
     tr  = [readdlm(joinpath(FAULT_DIR, "tractions", nset, "tractions_$(splitext(fn)[1]).dat"), '\t', Float64, '\n') for fn in fns]
     check_t0_tractions(tr[1], nset)
     keep = trues(size(tr[1], 1))
