@@ -178,9 +178,16 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
 
     z_aspect = hasproperty(fig_descriptor, :z_aspect) ? fig_descriptor.z_aspect : 0.1
     lift     = hasproperty(fig_descriptor, :lift)     ? fig_descriptor.lift     : 0.0
+    fs = hasproperty(fig_descriptor, :fontsize_annot) ? fig_descriptor.fontsize_annot : 18   # annotation font size
     
     fig = Figure(size=fig_descriptor.fig_size)
-    ax1 = Axis3(fig[1, 1], aspect=(1.0, 1.0, z_aspect), height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
+        
+    # Equal horizontal scale (x and y in the same units) when requested
+    equal_xy = hasproperty(fig_descriptor, :equal_xy) ? fig_descriptor.equal_xy : false
+    xr = fig_descriptor.xlms[2] - fig_descriptor.xlms[1]
+    yr = fig_descriptor.ylms[2] - fig_descriptor.ylms[1]
+    ax_aspect = equal_xy ? (1.0, yr / xr, z_aspect) : (1.0, 1.0, z_aspect)
+    ax1 = Axis3(fig[1, 1], aspect=ax_aspect, height=fig_descriptor.plot_height, azimuth=fig_descriptor.plot_azi, elevation=fig_descriptor.plot_elev, viewmode=:fitzoom) #azimuth default = 1.275pi, elevation default = pi/8
     #ax1.zreversed = true
     #lscene = LScene(fig[1, 1], show_axis=false, height=fig_descriptor.plot_height, valign=:center, halign=0)
     plotcbar = true
@@ -192,9 +199,7 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
             end
             pl = poly!(ax1, coords_plot, cells_nodes_map_plot[n], color=cells_values_nodes[n], colormap=fig_descriptor.cmap, colorrange=(minv, maxv), strokecolor=Makie.RGBA(0, 0, 0, 0.2), strokewidth=fig_descriptor.plot_linew, alpha=1.0)
             if plotcbar == true
-                cbar = Colorbar(fig[1, 2], pl, label=fig_descriptor.cbar_label, labelsize=18, height=fig_descriptor.cbar_height)
-                #cbar.ticks = range(round(minv,digits=0), stop=round(maxv,digits=0), length=6)
-                #Colorbar(fig[1, 2], pl, label=fig_descriptor.cbar_label, height=fig_descriptor.cbar_height, ticks=([1.0,2.0,3.0], ["Water", "Oil", "Gas"]))
+                cbar = Colorbar(fig[1, 2], pl, label=fig_descriptor.cbar_label, labelsize=fs, ticklabelsize=fs, width=0.6 * fs, ticksize=0.3 * fs, height=fig_descriptor.cbar_height)
                 plotcbar = false
             end
         end
@@ -215,12 +220,47 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
     if line_data !== nothing
         for line in line_data
             if size(line, 2) == 3
-                lines!(ax1, line[:, 1], line[:, 2], line[:, 3], color=:black, linewidth=1, linestyle=:solid)
+                x, y, z = copy(line[:, 1]), copy(line[:, 2]), copy(line[:, 3])
+                if !(hasproperty(fig_descriptor, :clip_lines) && !fig_descriptor.clip_lines)   # clip by default
+                    out = (x .< fig_descriptor.xlms[1]) .| (x .> fig_descriptor.xlms[2]) .|
+                          (y .< fig_descriptor.ylms[1]) .| (y .> fig_descriptor.ylms[2])
+                    x[out] .= NaN                      # NaN breaks the line outside the extent
+                end
+                lw = hasproperty(fig_descriptor, :coast_linewidth) ? fig_descriptor.coast_linewidth : 1
+                lines!(ax1, x, y, z, color=:black, linewidth=lw, linestyle=:solid)
             else
                 @warn "Skipping line - expected Nx3 matrix with x, y, z coordinates"
             end
         end
     end
+
+    # Scale bar and north arrow in data coordinates (exact in map view with equal_xy = true)
+    ztop = maximum(maximum(c[:, 3]) for c in coords_map if size(c, 1) > 0) + lift + 1.0
+    lwa  = fs / 6                                                    # annotation line width
+    if hasproperty(fig_descriptor, :scalebar_km) && fig_descriptor.scalebar_km !== nothing
+        L  = fig_descriptor.scalebar_km * 1e3
+        x0 = hasproperty(fig_descriptor, :scalebar_xy) ? fig_descriptor.scalebar_xy[1] : fig_descriptor.xlms[1] + 0.05 * xr
+        y0 = hasproperty(fig_descriptor, :scalebar_xy) ? fig_descriptor.scalebar_xy[2] : fig_descriptor.ylms[1] + 0.05 * yr
+        lines!(ax1, [x0, x0 + L], [y0, y0], [ztop, ztop], color=:black, linewidth=lwa)
+        for xt in (x0, x0 + L)
+            lines!(ax1, [xt, xt], [y0, y0 + 0.02 * yr], [ztop, ztop], color=:black, linewidth=lwa)
+        end
+        text!(ax1, Point3f(x0 + L / 2, y0 + 0.03 * yr, ztop); text="$(fig_descriptor.scalebar_km) km",
+              align=(:center, :bottom), fontsize=fs)
+    end
+    if hasproperty(fig_descriptor, :north_arrow) && fig_descriptor.north_arrow
+        xa = hasproperty(fig_descriptor, :north_xy) ? fig_descriptor.north_xy[1] : fig_descriptor.xlms[2] - 0.10 * xr
+        ya = hasproperty(fig_descriptor, :north_xy) ? fig_descriptor.north_xy[2] : fig_descriptor.ylms[2] - 0.25 * yr
+        La, wa = 0.10 * yr, 0.035 * yr                               # arrow length and half-width
+        tip, lft, rgt, notch = Point3f(xa, ya + La, ztop), Point3f(xa - wa, ya, ztop),
+                               Point3f(xa + wa, ya, ztop), Point3f(xa, ya + 0.3 * La, ztop)
+        V = [xa ya+La ztop; xa-wa ya ztop; xa ya+0.3La ztop; xa+wa ya ztop]   # tip, left, notch, right
+        poly!(ax1, V, [1 2 3], color=:black, strokewidth=0)                    # left half filled
+        poly!(ax1, V, [1 3 4], color=:white, strokewidth=0)                    # right half white
+        lines!(ax1, [tip, lft, notch, rgt, tip], color=:black, linewidth=lwa / 2)   # outline
+        text!(ax1, Point3f(xa, ya + La + 0.02 * yr, ztop); text="N", align=(:center, :bottom), fontsize=1.2 * fs)
+    end
+
     colgap!(fig.layout, 0)
     xlims!(ax1, fig_descriptor.xlms)
     ylims!(ax1, fig_descriptor.ylms) 
@@ -234,6 +274,7 @@ function plotNodalValues(cells_nodes_map_plot, coords_map, cells_values_nodes, f
         save(joinpath([fig_descriptor.save_dir, fig_descriptor.title * ".png"]), fig, px_per_unit=ppu)
     end
 
+    return fig, ax1
 end
 
 

@@ -18,16 +18,16 @@ include(tool(:makieplot)); using .MakiePolyPlot  # plotNodalValues  (file makieP
 
 ## Canonical deposited panels
 const PANELS = Dict(
-    "plastic-130" => [(tstep="step_117", comp="vertical", year=1965, clim=(-8,8),  azi=-0.5π, elev=0.25π),
-                      (tstep="step_337", comp="vertical", year=2020, clim=(-8,8),  azi=-0.5π, elev=0.25π)],
-    "plastic-120" => [(tstep="step_117", comp="vertical", year=1965, clim=(-9,9),  azi=-0.5π, elev=0.25π),
-                      (tstep="step_337", comp="vertical", year=2020, clim=(-9,9),  azi=-0.5π, elev=0.25π),
+    "plastic-130" => [(tstep="step_117", comp="vertical", year=1965, clim=(-8,8),  azi=-0.5π, elev=0.5π),
+                      (tstep="step_337", comp="vertical", year=2020, clim=(-8,8),  azi=-0.5π, elev=0.5π)],
+    "plastic-120" => [(tstep="step_117", comp="vertical", year=1965, clim=(-9,9),  azi=-0.5π, elev=0.5π),
+                      (tstep="step_337", comp="vertical", year=2020, clim=(-9,9),  azi=-0.5π, elev=0.5π),
                       (tstep="step_89",  comp="horizontal", year=1958, clim=nothing, azi=-0.5π, elev=0.5π)],
 )
 
 ## Select variant here; everything below follows
 sim_name = "plastic-120"
-panel_idx = 3 # see PANELS above 
+panel_idx = 2 # see PANELS above 
 p = PANELS[sim_name][panel_idx]
 ext_U    = joinpath(abaqus_extracted(sim_name), "U")     # extracted nodal-displacement sets
 
@@ -88,17 +88,19 @@ for set in 1:nsets
                                            sqrt.(disp[:, 2].^2 .+ disp[:, 3].^2)
 end
 
-mycmap = comp == "vertical" ? cgrad(:balance) : cgrad(:bone_1, rev=true)
+mycmap = comp == "vertical" ? cgrad(:BrBG_11) : cgrad(:bone_1, rev=true)
 labl   = comp == "vertical" ? L"$u_\text{z}$ [m]" : L"$||\mathbf{u}_h||$ [m]"
 ttl    = "u_$(comp == "vertical" ? "z" : "h")_ovbPico_$(sim_name)_$(p.year)"
 fig_descriptor = (cmap=mycmap, cbar_label=labl, fig_size=(1500,1200), plot_height=1000,
                   cbar_height=400, plot_azi=p.azi, plot_elev=p.elev, plot_linew=0.1,
-                  clim=p.clim,
+                  equal_xy=true,scalebar_km = p.elev ≈ 0.5π ? 5 : nothing, north_arrow = p.elev ≈ 0.5π,
+                  clim=p.clim, fontsize_annot=40, coast_linewidth=2,
                   xlms=(minimum(coords_map[1][:,1]), maximum(coords_map[1][:,1])),
                   ylms=(minimum(coords_map[1][:,2]), maximum(coords_map[1][:,2])),
                   save_fig=SAVE_TO_DEPOSIT, save_dir=figdir, title=ttl, target_dpi=400, target_size_in=(15,12))
 
-plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor, line_data=coastline)
+include(tool(:makieplot))                      
+MakiePolyPlot.plotNodalValues(face_list_map, coords_map, vals_nodes, fig_descriptor, line_data=coastline)
 
 # Output: coords + displacement at 1958 & u_h
 vtag = comp == "vertical" ? "u_z" : "u_h"
