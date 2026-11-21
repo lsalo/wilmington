@@ -5,15 +5,15 @@ each model variant; not a paper figure, deposited as evidence the initialization
 =#
 include(joinpath(@__DIR__, "..", "config.jl"))
 
-using HDF5, DelimitedFiles, LaTeXStrings, Printf
+using DelimitedFiles, LaTeXStrings, Printf
 using CairoMakie
 CairoMakie.activate!()
 
-sim_name = "plastic-120"     # ← switch variant
+sim_name = "plastic-130"     # ← switch variant
 
 # initial-stress file per variant (same mapping as the reservoir script's VARIANT_CFG)
 const STRESS_INI = Dict(
-    "plastic-130" => "initial_stress_rotated_criticallyStressed_mu0.6.inp",
+    "plastic-130" => "initial_stress_rotated_criticallyStressed_mu0.6_aphi2.07.inp",
     "plastic-120" => "initial_stress_rotated_sed_mu0.3_aphi1.25_bas_mu0.6_aphi1.75.inp",
 )
 
@@ -29,21 +29,19 @@ const COMP_MAP = Dict(
                       (4, 3, L"\sigma^\text{eff}_{zz}", :blue)],   # s_22 = zz
 )
 
-const SAVE_TO_DEPOSIT = true
+const SAVE_TO_DEPOSIT = false
 figdir = SAVE_TO_DEPOSIT ? datapath("figures", "abaqus", sim_name) : FIGS_DIR
 isdir(figdir) || mkpath(figdir)
 
 # Geostatic stress (resolved) and imposed initial stress
-geo_file = joinpath(abaqus_extracted(sim_name), "S", "ENTIRE_DOMAIN", "Geostatic_elements.h5")
-abq_out = h5open(geo_file, "r") do file
-    hcat([read(file[name]) for name in ("Sxx","Syy","Szz","Sxy","Sxz","Syz")]...)
-end
+geo_file = joinpath(abaqus_extracted(sim_name), "S", "ENTIRE_DOMAIN", "Geostatic_elements.dat")
+abq_raw  = readdlm(geo_file, ',', Float64, '\n', skipstart=1)       # ELEMENT_ID, Sxx, Syy, Szz, Sxy, Sxz, Syz
 stress_ini = readdlm(joinpath(FOR_ABAQUS_STRESS, STRESS_INI[sim_name]), ',')
 
-# align both to ascending element-id order (HDF5 NODE_LABEL is element-keyed but unsorted)
-nl = h5open(geo_file, "r") do file; read(file["NODE_LABEL"]); end
-abq_out    = abq_out[sortperm(nl), :]
+# align both to ascending element-id order
+abq_out    = abq_raw[sortperm(abq_raw[:, 1]), 2:7]                  # columns: Sxx, Syy, Szz, Sxy, Sxz, Syz
 stress_ini = stress_ini[sortperm(stress_ini[:, 1]), :]
+@assert abq_raw[sortperm(abq_raw[:, 1]), 1] == stress_ini[:, 1] "element ids differ"
 
 # 3-panel comparison: imposed (I.C.) vs resolved (Geostatic), σ11 / σ22 / σ33
 f = Figure(size=(1200, 420))
@@ -69,7 +67,7 @@ for (p, (col_ini, col_geo, sym, c)) in enumerate(panels)
     @printf("%-6s  bias = %+7.3f   std = %6.3f   P95|res| = %6.3f  MPa\n",
             sym.s, mean(res), std(res), quantile(abs.(res), 0.95))
 end
-f
+display(f)
 
 ppu = 9 * 300 / 900
 SAVE_TO_DEPOSIT && save(joinpath(figdir, "ic_vs_geostatic_$(sim_name).png"), f, px_per_unit=ppu)
